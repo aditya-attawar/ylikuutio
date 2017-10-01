@@ -45,6 +45,7 @@
 
 // Include standard headers
 #include <cmath>         // NAN, std::isnan, std::pow
+#include <inttypes.h>    // PRId32, PRId64, PRIu32, PRIu64, PRIx32, PRIx64
 #include <iostream>      // std::cout, std::cin, std::cerr
 #include <memory>        // std::make_shared, std::shared_ptr
 #include <stdint.h>      // uint32_t etc.
@@ -292,38 +293,44 @@ namespace ontology
                 case (datatypes::datatype::UNIVERSE_POINTER):
                     // OK, this is an `Universe` to be deleted.
                     delete static_cast<ontology::Universe*>(any_value->universe_pointer);
+                    break;
                 case (datatypes::datatype::SCENE_POINTER):
                     // OK, this is a `Scene` to be deleted.
                     delete static_cast<ontology::Scene*>(any_value->scene_pointer);
+                    break;
                 case (datatypes::datatype::SHADER_POINTER):
                     // OK, this is a `Shader` to be deleted.
                     delete static_cast<ontology::Shader*>(any_value->shader_pointer);
+                    break;
                 case (datatypes::datatype::MATERIAL_POINTER):
                     // OK, this is a `Material` to be deleted.
                     delete static_cast<ontology::Material*>(any_value->material_pointer);
+                    break;
                 case (datatypes::datatype::SPECIES_POINTER):
                     // OK, this is a `Species` to be deleted.
                     delete static_cast<ontology::Species*>(any_value->species_pointer);
+                    break;
                 case (datatypes::datatype::OBJECT_POINTER):
                     // OK, this is a `Object` to be deleted.
                     delete static_cast<ontology::Object*>(any_value->object_pointer);
+                    break;
                 case (datatypes::datatype::VECTORFONT_POINTER):
                     // OK, this is a `VectorFont` to be deleted.
                     delete static_cast<ontology::VectorFont*>(any_value->vector_font_pointer);
+                    break;
                 case (datatypes::datatype::GLYPH_POINTER):
                     // OK, this is a `Glyph` to be deleted.
                     delete static_cast<ontology::Glyph*>(any_value->glyph_pointer);
+                    break;
                 case (datatypes::datatype::TEXT3D_POINTER):
                     // OK, this is a `Text3D` to be deleted.
                     delete static_cast<ontology::Text3D*>(any_value->text3D_pointer);
+                    break;
                 default:
                     return nullptr;
             }
         }
-        else
-        {
-            return nullptr;
-        }
+        return nullptr;
     }
 
     std::shared_ptr<datatypes::AnyValue> Universe::info(
@@ -372,7 +379,7 @@ namespace ontology
 
             uint64_t memory_address = reinterpret_cast<uint64_t>((void*) entity);
             char memory_address_char_array[256];
-            snprintf(memory_address_char_array, sizeof(memory_address_char_array), "0x%08x", static_cast<uint64_t>(memory_address));
+            snprintf(memory_address_char_array, sizeof(memory_address_char_array), "0x%" PRIx64, static_cast<uint64_t>(memory_address));
 
             std::string entity_info = "memory address: ";
             entity_info += std::string(memory_address_char_array);
@@ -451,7 +458,7 @@ namespace ontology
         camera_cartesian_coordinates.y += 2.0f;
 
         // Projection matrix : 45° Field of View, aspect ratio, display range : 0.1 unit <-> 100 units
-        this->ProjectionMatrix = glm::perspective(FoV, aspect_ratio, 0.001f, 5000.0f + 2.0f * static_cast<GLfloat>(this->world_radius));
+        this->ProjectionMatrix = glm::perspective(DEGREES_TO_RADIANS(FoV), aspect_ratio, 0.001f, 5000.0f + 2.0f * static_cast<GLfloat>(this->world_radius));
         // Camera matrix
         this->ViewMatrix = glm::lookAt(
                 camera_cartesian_coordinates,                   // Camera is here
