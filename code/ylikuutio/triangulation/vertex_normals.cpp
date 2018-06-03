@@ -31,6 +31,25 @@ namespace geometry
             return false;
         }
 
+        if ((is_bilinear_interpolation_in_use && is_southwest_northeast_edges_in_use) ||
+                (is_bilinear_interpolation_in_use && is_southeast_northwest_edges_in_use) ||
+                (is_southwest_northeast_edges_in_use && is_southeast_northwest_edges_in_use))
+        {
+            // Only 1 triangulation type can be in use.
+            return false;
+        }
+
+        if (is_bilinear_interpolation_in_use)
+        {
+            // If bilinear interpolation is in use, then number of faces is:
+            const int32_t number_of_interpolated_vertices = (actual_image_width - 1) * (actual_image_height - 1);
+            temp_normals.reserve(actual_image_width * actual_image_height + number_of_interpolated_vertices);
+        }
+        else
+        {
+            temp_normals.reserve(actual_image_width * actual_image_height);
+        }
+
         if (is_bilinear_interpolation_in_use)
         {
             int32_t current_interpolated_vertex_i = actual_image_width * actual_image_height;

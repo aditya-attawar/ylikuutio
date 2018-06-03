@@ -1,8 +1,10 @@
 #include "bmp_loader.hpp"
 
 // Include standard headers
+#include <cstddef>  // std::size_t
 #include <cstdio>   // std::FILE, std::fclose, std::fopen, std::fread, std::getchar, std::printf etc.
 #include <iostream> // std::cout, std::cin, std::cerr
+#include <limits>   // std::numeric_limits
 #include <stdint.h> // uint32_t etc.
 #include <string>   // std::string
 
@@ -12,7 +14,7 @@ namespace loaders
             const std::string image_path,
             int32_t& image_width,
             int32_t& image_height,
-            int32_t& image_size)
+            std::size_t& image_size)
     {
         std::cout << "Loading BMP file " << image_path << " ...\n";
 
@@ -21,7 +23,7 @@ namespace loaders
         // Data read from the header of the BMP file
         uint8_t header[header_size];
         // Actual RGB image data.
-        uint8_t *image_data;
+        uint8_t* image_data;
 
         // Open the file
         const char* char_image_path = image_path.c_str();
@@ -77,7 +79,7 @@ namespace loaders
             return nullptr;
         }
 
-        image_size = static_cast<int32_t>(image_size_uint32_t);
+        image_size = static_cast<std::size_t>(image_size_uint32_t);
         image_width = *(int32_t*) &header[0x12];
         image_height = *(int32_t*) &header[0x16];
 
@@ -86,7 +88,16 @@ namespace loaders
         // Some BMP files are misformatted, guess missing information
         if (image_size == 0)
         {
-            image_size = image_width * image_height * 3; // 3 : one byte for each Red, Green and Blue component
+            int64_t number_of_pixels = static_cast<int64_t>(image_width) * image_height;
+
+            if (number_of_pixels > std::numeric_limits<std::size_t>::max() / 4)
+            {
+                std::cerr << "BMP file is too big, number of pixels: " << number_of_pixels << "\n";
+                std::fclose(file);
+                return nullptr;
+            }
+
+            image_size = number_of_pixels * 3; // 3 : one byte for each Red, Green and Blue component
         }
 
         // Create a buffer.

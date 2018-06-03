@@ -11,6 +11,12 @@
 #include "code/ylikuutio/ontology/font2D.hpp"
 #include "code/ylikuutio/common/globals.hpp"
 
+// Include GLEW
+#ifndef __GL_GLEW_H_INCLUDED
+#define __GL_GLEW_H_INCLUDED
+#include <GL/glew.h> // GLfloat, GLuint etc.
+#endif
+
 // Include GLFW
 #ifndef __GLFW3_H_INCLUDED
 #define __GLFW3_H_INCLUDED
@@ -47,7 +53,7 @@
 namespace map
 {
     template <class T1>
-        void print_keys_to_console(std::unordered_map<std::string, T1>* unordered_map_pointer, console::Console* console);
+        void print_keys_to_console(const std::unordered_map<std::string, T1>* const unordered_map_pointer, console::Console* const console);
 }
 
 namespace console
@@ -56,16 +62,16 @@ namespace console
     {
         public:
             // constructor.
-            Console(ConsoleStruct console_struct);
+            Console(const ConsoleStruct& console_struct);
 
             // destructor.
             ~Console();
 
             void set_my_keypress_callback_engine_vector_pointer(std::vector<KeyAndCallbackStruct>* my_keypress_callback_engine_vector_pointer);
             void set_my_keyrelease_callback_engine_vector_pointer(std::vector<KeyAndCallbackStruct>* my_keyrelease_callback_engine_vector_pointer);
-            void print_text(std::string text);
+            void print_text(const std::string& text);
             void print_help();
-            void draw_console();
+            void draw_console() const;
 
             // Public callbacks.
 
@@ -154,6 +160,12 @@ namespace console
                     console::Console* console);
 
             static std::shared_ptr<datatypes::AnyValue> enable_ctrl_c(
+                    callback_system::CallbackEngine*,
+                    callback_system::CallbackObject*,
+                    std::vector<callback_system::CallbackParameter*>&,
+                    console::Console* console);
+
+            static std::shared_ptr<datatypes::AnyValue> enable_ctrl_w(
                     callback_system::CallbackEngine*,
                     callback_system::CallbackObject*,
                     std::vector<callback_system::CallbackParameter*>&,
@@ -257,6 +269,12 @@ namespace console
                     std::vector<callback_system::CallbackParameter*>&,
                     console::Console* console);
 
+            static std::shared_ptr<datatypes::AnyValue> ctrl_w(
+                    callback_system::CallbackEngine*,
+                    callback_system::CallbackObject*,
+                    std::vector<callback_system::CallbackParameter*>&,
+                    console::Console* console);
+
             static std::shared_ptr<datatypes::AnyValue> page_up(
                     callback_system::CallbackEngine*,
                     callback_system::CallbackObject*,
@@ -284,14 +302,14 @@ namespace console
             // Public callbacks end here.
 
             template <class T1>
-                friend void map::print_keys_to_console(std::unordered_map<std::string, T1>* unordered_map_pointer, console::Console* console);
+                friend void map::print_keys_to_console(const std::unordered_map<std::string, T1>* const unordered_map_pointer, console::Console* const console);
 
         private:
             static void charmods_callback(GLFWwindow* window, unsigned int codepoint, int mods);
 
             // Callbacks end here.
 
-            ontology::Universe* get_universe();
+            ontology::Universe* get_universe() const;
 
             void copy_historical_input_into_current_input();
             bool exit_console();
@@ -312,6 +330,7 @@ namespace console
             bool can_backspace;
             bool can_enter_key;
             bool can_ctrl_c;
+            bool can_ctrl_w;
             bool can_page_up;
             bool can_page_down;
             bool can_home;
@@ -346,7 +365,7 @@ namespace console
             std::unordered_map<std::string, ConsoleCommandCallback>* command_callback_map_pointer;
 
             // This is a pointer to `ontology::Universe`.
-            ontology::Universe* universe_pointer;
+            ontology::Universe* universe;
 
             // This is a pointer to `font2D::Font2D` instance that is used for printing.
             ontology::Font2D* font2D_pointer;
@@ -358,6 +377,8 @@ namespace console
 
             int32_t n_rows;
             int32_t n_columns;
+
+            const std::string prompt = "$ ";
     };
 }
 

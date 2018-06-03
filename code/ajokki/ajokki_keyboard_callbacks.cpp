@@ -8,6 +8,7 @@
 #include "code/ylikuutio/ontology/species.hpp"
 #include "code/ylikuutio/ontology/material.hpp"
 #include "code/ylikuutio/ontology/universe.hpp"
+#include "code/ylikuutio/ontology/world.hpp"
 #include "code/ylikuutio/common/any_value.hpp"
 #include "code/ylikuutio/common/globals.hpp"
 
@@ -26,25 +27,41 @@ namespace ajokki
 {
     bool move_to_direction(callback_system::CallbackObject* callback_object, glm::vec3 moving_direction)
     {
-        std::shared_ptr<datatypes::AnyValue> any_value_universe_pointer = std::make_shared<datatypes::AnyValue>(*callback_object->get_arg(0));
+        std::shared_ptr<datatypes::AnyValue> any_value_universe = std::make_shared<datatypes::AnyValue>(*callback_object->get_arg(0));
 
-        if (any_value_universe_pointer == nullptr)
+        if (any_value_universe == nullptr)
         {
-            std::cerr << "Error: universe_pointer not found!\n";
+            std::cerr << "Error: universe not found!\n";
             return false;
         }
 
-        if (any_value_universe_pointer->type != datatypes::UNIVERSE_POINTER)
+        if (any_value_universe->type != datatypes::UNIVERSE_POINTER)
         {
-            std::cerr << "Invalid datatype: " << any_value_universe_pointer->type << ", should be " << datatypes::UNIVERSE_POINTER << "\n";
+            std::cerr << "Invalid datatype: " << any_value_universe->type << ", should be " << datatypes::UNIVERSE_POINTER << "\n";
             return false;
         }
 
-        ontology::Universe* universe = any_value_universe_pointer->universe_pointer;
+        ontology::Universe* universe = any_value_universe->universe;
 
         if (universe == nullptr)
         {
-            std::cerr << "Error: universe_pointer is nullptr!\n";
+            std::cerr << "Error: universe is nullptr!\n";
+            return false;
+        }
+
+        ontology::World* world = universe->get_active_world();
+
+        if (world == nullptr)
+        {
+            // No active `World`.
+            return false;
+        }
+
+        ontology::Scene* scene = universe->get_active_world()->get_active_scene();
+
+        if (scene == nullptr)
+        {
+            // No active scene.
             return false;
         }
 
@@ -62,7 +79,7 @@ namespace ajokki
         {
             temp_speed = universe->speed;
         }
-        *universe->cartesian_coordinates += temp_speed * universe->get_delta_time() * moving_direction;
+        universe->current_camera_cartesian_coordinates += temp_speed * universe->get_delta_time() * moving_direction;
 
         return true;
     }
@@ -76,25 +93,25 @@ namespace ajokki
             callback_system::CallbackObject* callback_object,
             std::vector<callback_system::CallbackParameter*>&)
     {
-        std::shared_ptr<datatypes::AnyValue> any_value_universe_pointer = std::make_shared<datatypes::AnyValue>(*callback_object->get_arg(0));
+        std::shared_ptr<datatypes::AnyValue> any_value_universe = std::make_shared<datatypes::AnyValue>(*callback_object->get_arg(0));
 
-        if (any_value_universe_pointer == nullptr)
+        if (any_value_universe == nullptr)
         {
-            std::cerr << "Error: universe_pointer not found!\n";
+            std::cerr << "Error: universe not found!\n";
             return nullptr;
         }
 
-        if (any_value_universe_pointer->type != datatypes::UNIVERSE_POINTER)
+        if (any_value_universe->type != datatypes::UNIVERSE_POINTER)
         {
-            std::cerr << "Invalid datatype: " << any_value_universe_pointer->type << ", should be " << datatypes::UNIVERSE_POINTER << "\n";
+            std::cerr << "Invalid datatype: " << any_value_universe->type << ", should be " << datatypes::UNIVERSE_POINTER << "\n";
             return nullptr;
         }
 
-        ontology::Universe* universe = any_value_universe_pointer->universe_pointer;
+        ontology::Universe* universe = any_value_universe->universe;
 
         if (universe == nullptr)
         {
-            std::cerr << "Error: universe_pointer is nullptr!\n";
+            std::cerr << "Error: universe is nullptr!\n";
             return nullptr;
         }
 
@@ -107,25 +124,25 @@ namespace ajokki
             callback_system::CallbackObject* callback_object,
             std::vector<callback_system::CallbackParameter*>&)
     {
-        std::shared_ptr<datatypes::AnyValue> any_value_universe_pointer = std::make_shared<datatypes::AnyValue>(*callback_object->get_arg(0));
+        std::shared_ptr<datatypes::AnyValue> any_value_universe = std::make_shared<datatypes::AnyValue>(*callback_object->get_arg(0));
 
-        if (any_value_universe_pointer == nullptr)
+        if (any_value_universe == nullptr)
         {
-            std::cerr << "Error: universe_pointer not found!\n";
+            std::cerr << "Error: universe not found!\n";
             return nullptr;
         }
 
-        if (any_value_universe_pointer->type != datatypes::UNIVERSE_POINTER)
+        if (any_value_universe->type != datatypes::UNIVERSE_POINTER)
         {
-            std::cerr << "Invalid datatype: " << any_value_universe_pointer->type << ", should be " << datatypes::UNIVERSE_POINTER << "\n";
+            std::cerr << "Invalid datatype: " << any_value_universe->type << ", should be " << datatypes::UNIVERSE_POINTER << "\n";
             return nullptr;
         }
 
-        ontology::Universe* universe = any_value_universe_pointer->universe_pointer;
+        ontology::Universe* universe = any_value_universe->universe;
 
         if (universe == nullptr)
         {
-            std::cerr << "Error: universe_pointer is nullptr!\n";
+            std::cerr << "Error: universe is nullptr!\n";
             return nullptr;
         }
 
@@ -138,25 +155,25 @@ namespace ajokki
             callback_system::CallbackObject* callback_object,
             std::vector<callback_system::CallbackParameter*>&)
     {
-        std::shared_ptr<datatypes::AnyValue> any_value_universe_pointer = std::make_shared<datatypes::AnyValue>(*callback_object->get_arg(0));
+        std::shared_ptr<datatypes::AnyValue> any_value_universe = std::make_shared<datatypes::AnyValue>(*callback_object->get_arg(0));
 
-        if (any_value_universe_pointer == nullptr)
+        if (any_value_universe == nullptr)
         {
-            std::cerr << "Error: universe_pointer not found!\n";
+            std::cerr << "Error: universe not found!\n";
             return nullptr;
         }
 
-        if (any_value_universe_pointer->type != datatypes::UNIVERSE_POINTER)
+        if (any_value_universe->type != datatypes::UNIVERSE_POINTER)
         {
-            std::cerr << "Invalid datatype: " << any_value_universe_pointer->type << ", should be " << datatypes::UNIVERSE_POINTER << "\n";
+            std::cerr << "Invalid datatype: " << any_value_universe->type << ", should be " << datatypes::UNIVERSE_POINTER << "\n";
             return nullptr;
         }
 
-        ontology::Universe* universe = any_value_universe_pointer->universe_pointer;
+        ontology::Universe* universe = any_value_universe->universe;
 
         if (universe == nullptr)
         {
-            std::cerr << "Error: universe_pointer is nullptr!\n";
+            std::cerr << "Error: universe is nullptr!\n";
             return nullptr;
         }
 
@@ -169,25 +186,25 @@ namespace ajokki
             callback_system::CallbackObject* callback_object,
             std::vector<callback_system::CallbackParameter*>&)
     {
-        std::shared_ptr<datatypes::AnyValue> any_value_universe_pointer = std::make_shared<datatypes::AnyValue>(*callback_object->get_arg(0));
+        std::shared_ptr<datatypes::AnyValue> any_value_universe = std::make_shared<datatypes::AnyValue>(*callback_object->get_arg(0));
 
-        if (any_value_universe_pointer == nullptr)
+        if (any_value_universe == nullptr)
         {
-            std::cerr << "Error: universe_pointer not found!\n";
+            std::cerr << "Error: universe not found!\n";
             return nullptr;
         }
 
-        if (any_value_universe_pointer->type != datatypes::UNIVERSE_POINTER)
+        if (any_value_universe->type != datatypes::UNIVERSE_POINTER)
         {
-            std::cerr << "Invalid datatype: " << any_value_universe_pointer->type << ", should be " << datatypes::UNIVERSE_POINTER << "\n";
+            std::cerr << "Invalid datatype: " << any_value_universe->type << ", should be " << datatypes::UNIVERSE_POINTER << "\n";
             return nullptr;
         }
 
-        ontology::Universe* universe = any_value_universe_pointer->universe_pointer;
+        ontology::Universe* universe = any_value_universe->universe;
 
         if (universe == nullptr)
         {
-            std::cerr << "Error: universe_pointer is nullptr!\n";
+            std::cerr << "Error: universe is nullptr!\n";
             return nullptr;
         }
 
@@ -200,25 +217,25 @@ namespace ajokki
             callback_system::CallbackObject* callback_object,
             std::vector<callback_system::CallbackParameter*>&)
     {
-        std::shared_ptr<datatypes::AnyValue> any_value_universe_pointer = std::make_shared<datatypes::AnyValue>(*callback_object->get_arg(0));
+        std::shared_ptr<datatypes::AnyValue> any_value_universe = std::make_shared<datatypes::AnyValue>(*callback_object->get_arg(0));
 
-        if (any_value_universe_pointer == nullptr)
+        if (any_value_universe == nullptr)
         {
-            std::cerr << "Error: universe_pointer not found!\n";
+            std::cerr << "Error: universe not found!\n";
             return nullptr;
         }
 
-        if (any_value_universe_pointer->type != datatypes::UNIVERSE_POINTER)
+        if (any_value_universe->type != datatypes::UNIVERSE_POINTER)
         {
-            std::cerr << "Invalid datatype: " << any_value_universe_pointer->type << ", should be " << datatypes::UNIVERSE_POINTER << "\n";
+            std::cerr << "Invalid datatype: " << any_value_universe->type << ", should be " << datatypes::UNIVERSE_POINTER << "\n";
             return nullptr;
         }
 
-        ontology::Universe* universe = any_value_universe_pointer->universe_pointer;
+        ontology::Universe* universe = any_value_universe->universe;
 
         if (universe == nullptr)
         {
-            std::cerr << "Error: universe_pointer is nullptr!\n";
+            std::cerr << "Error: universe is nullptr!\n";
             return nullptr;
         }
 
@@ -244,25 +261,25 @@ namespace ajokki
             callback_system::CallbackObject* callback_object,
             std::vector<callback_system::CallbackParameter*>&)
     {
-        std::shared_ptr<datatypes::AnyValue> any_value_universe_pointer = std::make_shared<datatypes::AnyValue>(*callback_object->get_arg(0));
+        std::shared_ptr<datatypes::AnyValue> any_value_universe = std::make_shared<datatypes::AnyValue>(*callback_object->get_arg(0));
 
-        if (any_value_universe_pointer == nullptr)
+        if (any_value_universe == nullptr)
         {
-            std::cerr << "Error: universe_pointer not found!\n";
+            std::cerr << "Error: universe not found!\n";
             return nullptr;
         }
 
-        if (any_value_universe_pointer->type != datatypes::UNIVERSE_POINTER)
+        if (any_value_universe->type != datatypes::UNIVERSE_POINTER)
         {
-            std::cerr << "Invalid datatype: " << any_value_universe_pointer->type << ", should be " << datatypes::UNIVERSE_POINTER << "\n";
+            std::cerr << "Invalid datatype: " << any_value_universe->type << ", should be " << datatypes::UNIVERSE_POINTER << "\n";
             return nullptr;
         }
 
-        ontology::Universe* universe = any_value_universe_pointer->universe_pointer;
+        ontology::Universe* universe = any_value_universe->universe;
 
         if (universe == nullptr)
         {
-            std::cerr << "Error: universe_pointer is nullptr!\n";
+            std::cerr << "Error: universe is nullptr!\n";
             return nullptr;
         }
 
@@ -275,25 +292,25 @@ namespace ajokki
             callback_system::CallbackObject* callback_object,
             std::vector<callback_system::CallbackParameter*>&)
     {
-        std::shared_ptr<datatypes::AnyValue> any_value_universe_pointer = std::make_shared<datatypes::AnyValue>(*callback_object->get_arg(0));
+        std::shared_ptr<datatypes::AnyValue> any_value_universe = std::make_shared<datatypes::AnyValue>(*callback_object->get_arg(0));
 
-        if (any_value_universe_pointer == nullptr)
+        if (any_value_universe == nullptr)
         {
-            std::cerr << "Error: universe_pointer not found!\n";
+            std::cerr << "Error: universe not found!\n";
             return nullptr;
         }
 
-        if (any_value_universe_pointer->type != datatypes::UNIVERSE_POINTER)
+        if (any_value_universe->type != datatypes::UNIVERSE_POINTER)
         {
-            std::cerr << "Invalid datatype: " << any_value_universe_pointer->type << ", should be " << datatypes::UNIVERSE_POINTER << "\n";
+            std::cerr << "Invalid datatype: " << any_value_universe->type << ", should be " << datatypes::UNIVERSE_POINTER << "\n";
             return nullptr;
         }
 
-        ontology::Universe* universe = any_value_universe_pointer->universe_pointer;
+        ontology::Universe* universe = any_value_universe->universe;
 
         if (universe == nullptr)
         {
-            std::cerr << "Error: universe_pointer is nullptr!\n";
+            std::cerr << "Error: universe is nullptr!\n";
             return nullptr;
         }
 
@@ -306,29 +323,29 @@ namespace ajokki
             callback_system::CallbackObject* callback_object,
             std::vector<callback_system::CallbackParameter*>&)
     {
-        std::shared_ptr<datatypes::AnyValue> any_value_universe_pointer = std::make_shared<datatypes::AnyValue>(*callback_object->get_arg(0));
+        std::shared_ptr<datatypes::AnyValue> any_value_universe = std::make_shared<datatypes::AnyValue>(*callback_object->get_arg(0));
 
-        if (any_value_universe_pointer == nullptr)
+        if (any_value_universe == nullptr)
         {
-            std::cerr << "Error: universe_pointer not found!\n";
+            std::cerr << "Error: universe not found!\n";
             return nullptr;
         }
 
-        if (any_value_universe_pointer->type != datatypes::UNIVERSE_POINTER)
+        if (any_value_universe->type != datatypes::UNIVERSE_POINTER)
         {
-            std::cerr << "Invalid datatype: " << any_value_universe_pointer->type << ", should be " << datatypes::UNIVERSE_POINTER << "\n";
+            std::cerr << "Invalid datatype: " << any_value_universe->type << ", should be " << datatypes::UNIVERSE_POINTER << "\n";
             return nullptr;
         }
 
-        ontology::Universe* universe = any_value_universe_pointer->universe_pointer;
+        ontology::Universe* universe = any_value_universe->universe;
 
         if (universe == nullptr)
         {
-            std::cerr << "Error: universe_pointer is nullptr!\n";
+            std::cerr << "Error: universe is nullptr!\n";
             return nullptr;
         }
 
-        ajokki::move_to_direction(callback_object, universe->direction);
+        ajokki::move_to_direction(callback_object, universe->current_camera_direction);
         return nullptr;
     }
 
@@ -337,29 +354,29 @@ namespace ajokki
             callback_system::CallbackObject* callback_object,
             std::vector<callback_system::CallbackParameter*>&)
     {
-        std::shared_ptr<datatypes::AnyValue> any_value_universe_pointer = std::make_shared<datatypes::AnyValue>(*callback_object->get_arg(0));
+        std::shared_ptr<datatypes::AnyValue> any_value_universe = std::make_shared<datatypes::AnyValue>(*callback_object->get_arg(0));
 
-        if (any_value_universe_pointer == nullptr)
+        if (any_value_universe == nullptr)
         {
-            std::cerr << "Error: universe_pointer not found!\n";
+            std::cerr << "Error: universe not found!\n";
             return nullptr;
         }
 
-        if (any_value_universe_pointer->type != datatypes::UNIVERSE_POINTER)
+        if (any_value_universe->type != datatypes::UNIVERSE_POINTER)
         {
-            std::cerr << "Invalid datatype: " << any_value_universe_pointer->type << ", should be " << datatypes::UNIVERSE_POINTER << "\n";
+            std::cerr << "Invalid datatype: " << any_value_universe->type << ", should be " << datatypes::UNIVERSE_POINTER << "\n";
             return nullptr;
         }
 
-        ontology::Universe* universe = any_value_universe_pointer->universe_pointer;
+        ontology::Universe* universe = any_value_universe->universe;
 
         if (universe == nullptr)
         {
-            std::cerr << "Error: universe_pointer is nullptr!\n";
+            std::cerr << "Error: universe is nullptr!\n";
             return nullptr;
         }
 
-        ajokki::move_to_direction(callback_object, -universe->direction);
+        ajokki::move_to_direction(callback_object, -universe->current_camera_direction);
         return nullptr;
     }
 
@@ -368,29 +385,29 @@ namespace ajokki
             callback_system::CallbackObject* callback_object,
             std::vector<callback_system::CallbackParameter*>&)
     {
-        std::shared_ptr<datatypes::AnyValue> any_value_universe_pointer = std::make_shared<datatypes::AnyValue>(*callback_object->get_arg(0));
+        std::shared_ptr<datatypes::AnyValue> any_value_universe = std::make_shared<datatypes::AnyValue>(*callback_object->get_arg(0));
 
-        if (any_value_universe_pointer == nullptr)
+        if (any_value_universe == nullptr)
         {
-            std::cerr << "Error: universe_pointer not found!\n";
+            std::cerr << "Error: universe not found!\n";
             return nullptr;
         }
 
-        if (any_value_universe_pointer->type != datatypes::UNIVERSE_POINTER)
+        if (any_value_universe->type != datatypes::UNIVERSE_POINTER)
         {
-            std::cerr << "Invalid datatype: " << any_value_universe_pointer->type << ", should be " << datatypes::UNIVERSE_POINTER << "\n";
+            std::cerr << "Invalid datatype: " << any_value_universe->type << ", should be " << datatypes::UNIVERSE_POINTER << "\n";
             return nullptr;
         }
 
-        ontology::Universe* universe = any_value_universe_pointer->universe_pointer;
+        ontology::Universe* universe = any_value_universe->universe;
 
         if (universe == nullptr)
         {
-            std::cerr << "Error: universe_pointer is nullptr!\n";
+            std::cerr << "Error: universe is nullptr!\n";
             return nullptr;
         }
 
-        ajokki::move_to_direction(callback_object, -universe->right);
+        ajokki::move_to_direction(callback_object, -universe->current_camera_right);
         return nullptr;
     }
 
@@ -399,29 +416,29 @@ namespace ajokki
             callback_system::CallbackObject* callback_object,
             std::vector<callback_system::CallbackParameter*>&)
     {
-        std::shared_ptr<datatypes::AnyValue> any_value_universe_pointer = std::make_shared<datatypes::AnyValue>(*callback_object->get_arg(0));
+        std::shared_ptr<datatypes::AnyValue> any_value_universe = std::make_shared<datatypes::AnyValue>(*callback_object->get_arg(0));
 
-        if (any_value_universe_pointer == nullptr)
+        if (any_value_universe == nullptr)
         {
-            std::cerr << "Error: universe_pointer not found!\n";
+            std::cerr << "Error: universe not found!\n";
             return nullptr;
         }
 
-        if (any_value_universe_pointer->type != datatypes::UNIVERSE_POINTER)
+        if (any_value_universe->type != datatypes::UNIVERSE_POINTER)
         {
-            std::cerr << "Invalid datatype: " << any_value_universe_pointer->type << ", should be " << datatypes::UNIVERSE_POINTER << "\n";
+            std::cerr << "Invalid datatype: " << any_value_universe->type << ", should be " << datatypes::UNIVERSE_POINTER << "\n";
             return nullptr;
         }
 
-        ontology::Universe* universe = any_value_universe_pointer->universe_pointer;
+        ontology::Universe* universe = any_value_universe->universe;
 
         if (universe == nullptr)
         {
-            std::cerr << "Error: universe_pointer is nullptr!\n";
+            std::cerr << "Error: universe is nullptr!\n";
             return nullptr;
         }
 
-        ajokki::move_to_direction(callback_object, universe->right);
+        ajokki::move_to_direction(callback_object, universe->current_camera_right);
         return nullptr;
     }
 
@@ -430,29 +447,29 @@ namespace ajokki
             callback_system::CallbackObject* callback_object,
             std::vector<callback_system::CallbackParameter*>&)
     {
-        std::shared_ptr<datatypes::AnyValue> any_value_universe_pointer = std::make_shared<datatypes::AnyValue>(*callback_object->get_arg(0));
+        std::shared_ptr<datatypes::AnyValue> any_value_universe = std::make_shared<datatypes::AnyValue>(*callback_object->get_arg(0));
 
-        if (any_value_universe_pointer == nullptr)
+        if (any_value_universe == nullptr)
         {
-            std::cerr << "Error: universe_pointer not found!\n";
+            std::cerr << "Error: universe not found!\n";
             return nullptr;
         }
 
-        if (any_value_universe_pointer->type != datatypes::UNIVERSE_POINTER)
+        if (any_value_universe->type != datatypes::UNIVERSE_POINTER)
         {
-            std::cerr << "Invalid datatype: " << any_value_universe_pointer->type << ", should be " << datatypes::UNIVERSE_POINTER << "\n";
+            std::cerr << "Invalid datatype: " << any_value_universe->type << ", should be " << datatypes::UNIVERSE_POINTER << "\n";
             return nullptr;
         }
 
-        ontology::Universe* universe = any_value_universe_pointer->universe_pointer;
+        ontology::Universe* universe = any_value_universe->universe;
 
         if (universe == nullptr)
         {
-            std::cerr << "Error: universe_pointer is nullptr!\n";
+            std::cerr << "Error: universe is nullptr!\n";
             return nullptr;
         }
 
-        ajokki::move_to_direction(callback_object, universe->up);
+        ajokki::move_to_direction(callback_object, universe->current_camera_up);
         return nullptr;
     }
 
@@ -461,29 +478,29 @@ namespace ajokki
             callback_system::CallbackObject* callback_object,
             std::vector<callback_system::CallbackParameter*>&)
     {
-        std::shared_ptr<datatypes::AnyValue> any_value_universe_pointer = std::make_shared<datatypes::AnyValue>(*callback_object->get_arg(0));
+        std::shared_ptr<datatypes::AnyValue> any_value_universe = std::make_shared<datatypes::AnyValue>(*callback_object->get_arg(0));
 
-        if (any_value_universe_pointer == nullptr)
+        if (any_value_universe == nullptr)
         {
-            std::cerr << "Error: universe_pointer not found!\n";
+            std::cerr << "Error: universe not found!\n";
             return nullptr;
         }
 
-        if (any_value_universe_pointer->type != datatypes::UNIVERSE_POINTER)
+        if (any_value_universe->type != datatypes::UNIVERSE_POINTER)
         {
-            std::cerr << "Invalid datatype: " << any_value_universe_pointer->type << ", should be " << datatypes::UNIVERSE_POINTER << "\n";
+            std::cerr << "Invalid datatype: " << any_value_universe->type << ", should be " << datatypes::UNIVERSE_POINTER << "\n";
             return nullptr;
         }
 
-        ontology::Universe* universe = any_value_universe_pointer->universe_pointer;
+        ontology::Universe* universe = any_value_universe->universe;
 
         if (universe == nullptr)
         {
-            std::cerr << "Error: universe_pointer is nullptr!\n";
+            std::cerr << "Error: universe is nullptr!\n";
             return nullptr;
         }
 
-        ajokki::move_to_direction(callback_object, -universe->up);
+        ajokki::move_to_direction(callback_object, -universe->current_camera_up);
         return nullptr;
     }
 
@@ -492,25 +509,25 @@ namespace ajokki
             callback_system::CallbackObject* callback_object,
             std::vector<callback_system::CallbackParameter*>&)
     {
-        std::shared_ptr<datatypes::AnyValue> any_value_universe_pointer = std::make_shared<datatypes::AnyValue>(*callback_object->get_arg(0));
+        std::shared_ptr<datatypes::AnyValue> any_value_universe = std::make_shared<datatypes::AnyValue>(*callback_object->get_arg(0));
 
-        if (any_value_universe_pointer == nullptr)
+        if (any_value_universe == nullptr)
         {
-            std::cerr << "Error: universe_pointer not found!\n";
+            std::cerr << "Error: universe not found!\n";
             return nullptr;
         }
 
-        if (any_value_universe_pointer->type != datatypes::UNIVERSE_POINTER)
+        if (any_value_universe->type != datatypes::UNIVERSE_POINTER)
         {
-            std::cerr << "Invalid datatype: " << any_value_universe_pointer->type << ", should be " << datatypes::UNIVERSE_POINTER << "\n";
+            std::cerr << "Invalid datatype: " << any_value_universe->type << ", should be " << datatypes::UNIVERSE_POINTER << "\n";
             return nullptr;
         }
 
-        ontology::Universe* universe = any_value_universe_pointer->universe_pointer;
+        ontology::Universe* universe = any_value_universe->universe;
 
         if (universe == nullptr)
         {
-            std::cerr << "Error: universe_pointer is nullptr!\n";
+            std::cerr << "Error: universe is nullptr!\n";
             return nullptr;
         }
 
@@ -527,25 +544,25 @@ namespace ajokki
             callback_system::CallbackObject* callback_object,
             std::vector<callback_system::CallbackParameter*>&)
     {
-        std::shared_ptr<datatypes::AnyValue> any_value_universe_pointer = std::make_shared<datatypes::AnyValue>(*callback_object->get_arg(0));
+        std::shared_ptr<datatypes::AnyValue> any_value_universe = std::make_shared<datatypes::AnyValue>(*callback_object->get_arg(0));
 
-        if (any_value_universe_pointer == nullptr)
+        if (any_value_universe == nullptr)
         {
-            std::cerr << "Error: universe_pointer not found!\n";
+            std::cerr << "Error: universe not found!\n";
             return nullptr;
         }
 
-        if (any_value_universe_pointer->type != datatypes::UNIVERSE_POINTER)
+        if (any_value_universe->type != datatypes::UNIVERSE_POINTER)
         {
-            std::cerr << "Invalid datatype: " << any_value_universe_pointer->type << ", should be " << datatypes::UNIVERSE_POINTER << "\n";
+            std::cerr << "Invalid datatype: " << any_value_universe->type << ", should be " << datatypes::UNIVERSE_POINTER << "\n";
             return nullptr;
         }
 
-        ontology::Universe* universe = any_value_universe_pointer->universe_pointer;
+        ontology::Universe* universe = any_value_universe->universe;
 
         if (universe == nullptr)
         {
-            std::cerr << "Error: universe_pointer is nullptr!\n";
+            std::cerr << "Error: universe is nullptr!\n";
             return nullptr;
         }
 
@@ -563,25 +580,25 @@ namespace ajokki
             callback_system::CallbackObject* callback_object,
             std::vector<callback_system::CallbackParameter*>&)
     {
-        std::shared_ptr<datatypes::AnyValue> any_value_universe_pointer = std::make_shared<datatypes::AnyValue>(*callback_object->get_arg(0));
+        std::shared_ptr<datatypes::AnyValue> any_value_universe = std::make_shared<datatypes::AnyValue>(*callback_object->get_arg(0));
 
-        if (any_value_universe_pointer == nullptr)
+        if (any_value_universe == nullptr)
         {
-            std::cerr << "Error: universe_pointer not found!\n";
+            std::cerr << "Error: universe not found!\n";
             return nullptr;
         }
 
-        if (any_value_universe_pointer->type != datatypes::UNIVERSE_POINTER)
+        if (any_value_universe->type != datatypes::UNIVERSE_POINTER)
         {
-            std::cerr << "Invalid datatype: " << any_value_universe_pointer->type << ", should be " << datatypes::UNIVERSE_POINTER << "\n";
+            std::cerr << "Invalid datatype: " << any_value_universe->type << ", should be " << datatypes::UNIVERSE_POINTER << "\n";
             return nullptr;
         }
 
-        ontology::Universe* universe = any_value_universe_pointer->universe_pointer;
+        ontology::Universe* universe = any_value_universe->universe;
 
         if (universe == nullptr)
         {
-            std::cerr << "Error: universe_pointer is nullptr!\n";
+            std::cerr << "Error: universe is nullptr!\n";
             return nullptr;
         }
 
@@ -593,7 +610,7 @@ namespace ajokki
         return nullptr;
     }
 
-    std::shared_ptr<datatypes::AnyValue> delete_suzanne_species(
+    std::shared_ptr<datatypes::AnyValue> delete_entity(
             callback_system::CallbackEngine*,
             callback_system::CallbackObject* callback_object,
             std::vector<callback_system::CallbackParameter*>&)
@@ -611,32 +628,60 @@ namespace ajokki
         // where `foo` is the zero-based index of the variable. First `CallbackParameter` of
         // a `CallbackObject` gets index 0, second `CallbackParameter` gets index 1, etc.
 
-        std::shared_ptr<datatypes::AnyValue> any_value_species_pointer = std::make_shared<datatypes::AnyValue>(*callback_object->get_any_value("suzanne_species"));
-        std::shared_ptr<datatypes::AnyValue> any_value_bool_pointer = std::make_shared<datatypes::AnyValue>(*callback_object->get_any_value("does_suzanne_species_exist"));
+        std::shared_ptr<datatypes::AnyValue> any_value_universe = std::make_shared<datatypes::AnyValue>(*callback_object->get_arg(0));
 
-        if (any_value_species_pointer->type != datatypes::SPECIES_POINTER)
+        if (any_value_universe == nullptr)
         {
-            // `any_value_species_pointer` did not contain `ontology::Species*`.
+            std::cerr << "Error: universe not found!\n";
             return nullptr;
         }
 
-        if (any_value_bool_pointer->type != datatypes::BOOL_POINTER)
+        if (any_value_universe->type != datatypes::UNIVERSE_POINTER)
         {
-            // `any_value_bool_pointer` did not contain `bool*`.
+            std::cerr << "Invalid datatype: " << any_value_universe->type << ", should be " << datatypes::UNIVERSE_POINTER << "\n";
             return nullptr;
         }
 
-        // OK, `any_value_species_pointer` contained `ontology::Species*` and
-        // `any_value_bool_pointer` contained a `bool*`.
-        bool* does_suzanne_species_exist = any_value_bool_pointer->bool_pointer;
+        ontology::Universe* universe = any_value_universe->universe;
 
-        if (*does_suzanne_species_exist)
+        if (universe == nullptr)
         {
-            ontology::Species* species = any_value_species_pointer->species_pointer;
-            delete species;
-
-            *does_suzanne_species_exist = false;
+            std::cerr << "Error: universe is nullptr!\n";
+            return nullptr;
         }
+
+        std::shared_ptr<datatypes::AnyValue> any_value_entity_string = std::make_shared<datatypes::AnyValue>(*callback_object->get_arg(1));
+
+        if (any_value_entity_string == nullptr)
+        {
+            std::cerr << "Error: entity_string not found!\n";
+            return nullptr;
+        }
+
+        if (any_value_entity_string->type != datatypes::STD_STRING_POINTER)
+        {
+            std::cerr << "Invalid datatype: " << any_value_entity_string->type << ", should be " << datatypes::STD_STRING_POINTER << "\n";
+            return nullptr;
+        }
+
+        std::string* entity_string_pointer = any_value_entity_string->std_string_pointer;
+
+        if (entity_string_pointer == nullptr)
+        {
+            return nullptr;
+        }
+
+        std::string entity_string = *entity_string_pointer;
+
+        ontology::Entity* entity = universe->get_entity(entity_string);
+
+        if (entity == nullptr)
+        {
+            return nullptr;
+        }
+
+        delete entity;
+
         return nullptr;
     }
 
@@ -645,113 +690,238 @@ namespace ajokki
             callback_system::CallbackObject* callback_object,
             std::vector<callback_system::CallbackParameter*>&)
     {
-        std::shared_ptr<datatypes::AnyValue> any_value_species_pointer = std::make_shared<datatypes::AnyValue>(*callback_object->get_any_value("suzanne_species"));
-        std::shared_ptr<datatypes::AnyValue> any_value_material_pointer = std::make_shared<datatypes::AnyValue>(*callback_object->get_any_value("new_material"));
-        std::shared_ptr<datatypes::AnyValue> any_value_does_suzanne_species_exist = std::make_shared<datatypes::AnyValue>(*callback_object->get_any_value("does_suzanne_species_exist"));
-        std::shared_ptr<datatypes::AnyValue> any_value_does_suzanne_species_have_original_texture = std::make_shared<datatypes::AnyValue>(*callback_object->get_any_value("does_suzanne_species_have_old_texture"));
-        std::shared_ptr<datatypes::AnyValue> any_value_does_suzanne_species_have_new_texture = std::make_shared<datatypes::AnyValue>(*callback_object->get_any_value("does_suzanne_species_have_new_texture"));
+        std::shared_ptr<datatypes::AnyValue> any_value_universe = std::make_shared<datatypes::AnyValue>(*callback_object->get_arg(0));
 
-        if (any_value_species_pointer->type != datatypes::SPECIES_POINTER)
+        if (any_value_universe == nullptr)
         {
-            // `any_value_species_pointer` did not contain `ontology::Species*`.
+            std::cerr << "Error: universe not found!\n";
             return nullptr;
         }
 
-        if (any_value_material_pointer->type != datatypes::MATERIAL_POINTER)
+        if (any_value_universe->type != datatypes::UNIVERSE_POINTER)
         {
-            // `any_value_material_pointer` did not contain `ontology::Material*`.
+            std::cerr << "Invalid datatype: " << any_value_universe->type << ", should be " << datatypes::UNIVERSE_POINTER << "\n";
             return nullptr;
         }
 
-        if (any_value_does_suzanne_species_exist->type != datatypes::BOOL_POINTER)
+        ontology::Universe* universe = any_value_universe->universe;
+
+        if (universe == nullptr)
         {
-            // `any_value_does_suzanne_species_exist` did not contain `bool*`.
+            std::cerr << "Error: universe is nullptr!\n";
             return nullptr;
         }
 
-        if (any_value_does_suzanne_species_have_original_texture->type != datatypes::BOOL_POINTER)
+        std::shared_ptr<datatypes::AnyValue> any_value_entity_string = std::make_shared<datatypes::AnyValue>(*callback_object->get_arg(1));
+
+        if (any_value_entity_string == nullptr)
         {
-            // `any_value_does_suzanne_species_have_original_texture` did not contain `bool*`.
+            std::cerr << "Error: entity_string not found!\n";
             return nullptr;
         }
 
-        if (any_value_does_suzanne_species_have_new_texture->type != datatypes::BOOL_POINTER)
+        if (any_value_entity_string->type != datatypes::STD_STRING_POINTER)
         {
-            // `any_value_does_suzanne_species_have_new_texture` did not contain `bool*`.
+            std::cerr << "Invalid datatype: " << any_value_entity_string->type << ", should be " << datatypes::STD_STRING_POINTER << "\n";
             return nullptr;
         }
 
-        bool* does_suzanne_species_exist = any_value_does_suzanne_species_exist->bool_pointer;
-        bool* does_suzanne_species_have_original_texture = any_value_does_suzanne_species_have_original_texture->bool_pointer;
-        bool* does_suzanne_species_have_new_texture = any_value_does_suzanne_species_have_new_texture->bool_pointer;
+        std::string* entity_string_pointer = any_value_entity_string->std_string_pointer;
 
-        if (*does_suzanne_species_exist && *does_suzanne_species_have_original_texture)
+        if (entity_string_pointer == nullptr)
         {
-            ontology::Species* species = any_value_species_pointer->species_pointer;
-            ontology::Material* material = any_value_material_pointer->material_pointer;
-            species->bind_to_new_parent(material);
-
-            *does_suzanne_species_have_original_texture = false;
-            *does_suzanne_species_have_new_texture = true;
+            return nullptr;
         }
+
+        std::string entity_string = *entity_string_pointer;
+
+        ontology::Entity* entity = universe->get_entity(entity_string);
+
+        if (entity == nullptr)
+        {
+            return nullptr;
+        }
+
+        ontology::Species* species = dynamic_cast<ontology::Species*>(entity);
+
+        if (species == nullptr)
+        {
+            return nullptr;
+        }
+
+        ontology::Entity* old_material_entity = species->get_parent();
+
+        ontology::Material* old_material = dynamic_cast<ontology::Material*>(old_material_entity);
+
+        if (old_material == nullptr)
+        {
+            return nullptr;
+        }
+
+        std::shared_ptr<datatypes::AnyValue> any_value_material_string = std::make_shared<datatypes::AnyValue>(*callback_object->get_arg(2));
+
+        if (any_value_material_string == nullptr)
+        {
+            std::cerr << "Error: material_string not found!\n";
+            return nullptr;
+        }
+
+        if (any_value_material_string->type != datatypes::STD_STRING_POINTER)
+        {
+            std::cerr << "Invalid datatype: " << any_value_material_string->type << ", should be " << datatypes::STD_STRING_POINTER << "\n";
+            return nullptr;
+        }
+
+        std::string* new_material_string_pointer = any_value_material_string->std_string_pointer;
+
+        if (new_material_string_pointer == nullptr)
+        {
+            return nullptr;
+        }
+
+        std::string new_material_string = *new_material_string_pointer;
+
+        ontology::Entity* new_material_entity = universe->get_entity(new_material_string);
+
+        if (new_material_entity == nullptr)
+        {
+            return nullptr;
+        }
+
+        ontology::Material* new_material = dynamic_cast<ontology::Material*>(new_material_entity);
+
+        if (new_material == nullptr)
+        {
+            return nullptr;
+        }
+
+        if (old_material == new_material)
+        {
+            // New parent is the same as old parent, no changes needed.
+            return nullptr;
+        }
+
+        species->bind_to_new_parent(new_material);
         return nullptr;
     }
 
     std::shared_ptr<datatypes::AnyValue> transform_into_new_species(
             callback_system::CallbackEngine*,
-            callback_system::CallbackObject*,
-            std::vector<callback_system::CallbackParameter*>& input_parameters)
+            callback_system::CallbackObject* callback_object,
+            std::vector<callback_system::CallbackParameter*>&)
     {
-        // This serves as an example of how to use indexed input parameters.
-        std::shared_ptr<datatypes::AnyValue> any_value_object_pointer = std::make_shared<datatypes::AnyValue>(*input_parameters.at(0)->get_any_value());
-        std::shared_ptr<datatypes::AnyValue> any_value_species_pointer = std::make_shared<datatypes::AnyValue>(*input_parameters.at(1)->get_any_value());
-        std::shared_ptr<datatypes::AnyValue> any_value_does_suzanne_species_exist = std::make_shared<datatypes::AnyValue>(*input_parameters.at(2)->get_any_value());
-        std::shared_ptr<datatypes::AnyValue> any_value_does_suzanne_species_belong_to_original_species = std::make_shared<datatypes::AnyValue>(*input_parameters.at(3)->get_any_value());
-        std::shared_ptr<datatypes::AnyValue> any_value_does_suzanne_species_belong_to_new_species = std::make_shared<datatypes::AnyValue>(*input_parameters.at(4)->get_any_value());
+        std::shared_ptr<datatypes::AnyValue> any_value_universe = std::make_shared<datatypes::AnyValue>(*callback_object->get_arg(0));
 
-        if (any_value_object_pointer->type != datatypes::OBJECT_POINTER)
+        if (any_value_universe == nullptr)
         {
-            // `any_value_object_pointer` did not contain `ontology::Object*`.
+            std::cerr << "Error: universe not found!\n";
             return nullptr;
         }
 
-        if (any_value_species_pointer->type != datatypes::SPECIES_POINTER)
+        if (any_value_universe->type != datatypes::UNIVERSE_POINTER)
         {
-            // `any_value_species_pointer` did not contain `ontology::Species*`.
+            std::cerr << "Invalid datatype: " << any_value_universe->type << ", should be " << datatypes::UNIVERSE_POINTER << "\n";
             return nullptr;
         }
 
-        if (any_value_does_suzanne_species_exist->type != datatypes::BOOL_POINTER)
+        ontology::Universe* universe = any_value_universe->universe;
+
+        if (universe == nullptr)
         {
-            // `any_value_does_suzanne_species_exist` did not contain `bool*`.
+            std::cerr << "Error: universe is nullptr!\n";
             return nullptr;
         }
 
-        if (any_value_does_suzanne_species_belong_to_original_species->type != datatypes::BOOL_POINTER)
+        std::shared_ptr<datatypes::AnyValue> any_value_entity_string = std::make_shared<datatypes::AnyValue>(*callback_object->get_arg(1));
+
+        if (any_value_entity_string == nullptr)
         {
-            // `any_value_does_suzanne_species_belong_to_original_species` did not contain `bool*`.
+            std::cerr << "Error: entity_string not found!\n";
             return nullptr;
         }
 
-        if (any_value_does_suzanne_species_belong_to_new_species->type != datatypes::BOOL_POINTER)
+        if (any_value_entity_string->type != datatypes::STD_STRING_POINTER)
         {
-            // `any_value_does_suzanne_species_belong_to_new_species` did not contain `bool*`.
+            std::cerr << "Invalid datatype: " << any_value_entity_string->type << ", should be " << datatypes::STD_STRING_POINTER << "\n";
             return nullptr;
         }
 
-        bool* does_suzanne_species_exist = any_value_does_suzanne_species_exist->bool_pointer;
-        bool* does_suzanne_species_belong_to_original_species = any_value_does_suzanne_species_belong_to_original_species->bool_pointer;
-        bool* does_suzanne_species_belong_to_new_species = any_value_does_suzanne_species_belong_to_new_species->bool_pointer;
+        std::string* entity_string_pointer = any_value_entity_string->std_string_pointer;
 
-        if (*does_suzanne_species_exist && *does_suzanne_species_belong_to_original_species)
+        if (entity_string_pointer == nullptr)
         {
-            ontology::Object* object = any_value_object_pointer->object_pointer;
-            ontology::Species* species = any_value_species_pointer->species_pointer;
-            object->bind_to_new_parent(species);
-
-            *does_suzanne_species_belong_to_original_species = false;
-            *does_suzanne_species_belong_to_new_species = true;
+            return nullptr;
         }
+
+        std::string entity_string = *entity_string_pointer;
+
+        ontology::Entity* entity = universe->get_entity(entity_string);
+
+        if (entity == nullptr)
+        {
+            return nullptr;
+        }
+
+        ontology::Object* object = dynamic_cast<ontology::Object*>(entity);
+
+        if (object == nullptr)
+        {
+            return nullptr;
+        }
+
+        ontology::Entity* old_species_entity = object->get_parent();
+
+        ontology::Species* old_species = dynamic_cast<ontology::Species*>(old_species_entity);
+
+        if (old_species == nullptr)
+        {
+            return nullptr;
+        }
+
+        std::shared_ptr<datatypes::AnyValue> any_value_species_string = std::make_shared<datatypes::AnyValue>(*callback_object->get_arg(2));
+
+        if (any_value_species_string == nullptr)
+        {
+            std::cerr << "Error: species_string not found!\n";
+            return nullptr;
+        }
+
+        if (any_value_species_string->type != datatypes::STD_STRING_POINTER)
+        {
+            std::cerr << "Invalid datatype: " << any_value_species_string->type << ", should be " << datatypes::STD_STRING_POINTER << "\n";
+            return nullptr;
+        }
+
+        std::string* new_species_string_pointer = any_value_species_string->std_string_pointer;
+
+        if (new_species_string_pointer == nullptr)
+        {
+            return nullptr;
+        }
+
+        std::string new_species_string = *new_species_string_pointer;
+
+        ontology::Entity* new_species_entity = universe->get_entity(new_species_string);
+
+        if (new_species_entity == nullptr)
+        {
+            return nullptr;
+        }
+
+        ontology::Species* new_species = dynamic_cast<ontology::Species*>(new_species_entity);
+
+        if (new_species == nullptr)
+        {
+            return nullptr;
+        }
+
+        if (old_species == new_species)
+        {
+            // New parent is the same as old parent, no changes needed.
+            return nullptr;
+        }
+
+        object->bind_to_new_parent(new_species);
         return nullptr;
     }
 }

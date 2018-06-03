@@ -85,9 +85,12 @@ namespace detail
 
 	// -- Implicit basic constructors --
 
-#	if !GLM_HAS_DEFAULTED_FUNCTIONS
+#	if !GLM_HAS_DEFAULTED_FUNCTIONS || defined(GLM_FORCE_CTOR_INIT)
 		template<typename T, qualifier Q>
 		GLM_FUNC_QUALIFIER GLM_CONSTEXPR tquat<T, Q>::tquat()
+#			ifdef GLM_FORCE_CTOR_INIT
+			: x(0), y(0), z(0), w(1)
+#			endif
 		{}
 #	endif
 
@@ -127,7 +130,7 @@ namespace detail
 		, w(static_cast<T>(q.w))
 	{}
 
-	//template<typename valType> 
+	//template<typename valType>
 	//GLM_FUNC_QUALIFIER tquat<valType>::tquat
 	//(
 	//	valType const& pitch,
@@ -138,7 +141,7 @@ namespace detail
 	//	vec<3, valType> eulerAngle(pitch * valType(0.5), yaw * valType(0.5), roll * valType(0.5));
 	//	vec<3, valType> c = glm::cos(eulerAngle * valType(0.5));
 	//	vec<3, valType> s = glm::sin(eulerAngle * valType(0.5));
-	//	
+	//
 	//	this->w = c.x * c.y * c.z + s.x * s.y * s.z;
 	//	this->x = s.x * c.y * c.z - c.x * s.y * s.z;
 	//	this->y = c.x * s.y * c.z + s.x * c.y * s.z;
@@ -174,7 +177,7 @@ namespace detail
 	{
 		vec<3, T, Q> c = glm::cos(eulerAngle * T(0.5));
 		vec<3, T, Q> s = glm::sin(eulerAngle * T(0.5));
-		
+
 		this->w = c.x * c.y * c.z + s.x * s.y * s.z;
 		this->x = s.x * c.y * c.z - c.x * s.y * s.z;
 		this->y = c.x * s.y * c.z + s.x * c.y * s.z;
@@ -199,8 +202,8 @@ namespace detail
 	{
 		return mat3_cast(*this);
 	}
-	
-	template<typename T, qualifier Q>	
+
+	template<typename T, qualifier Q>
 	GLM_FUNC_QUALIFIER tquat<T, Q>::operator mat<4, 4, T, Q>()
 	{
 		return mat4_cast(*this);
@@ -306,6 +309,12 @@ namespace detail
 	GLM_FUNC_QUALIFIER tquat<T, Q> operator+(tquat<T, Q> const& q, tquat<T, Q> const& p)
 	{
 		return tquat<T, Q>(q) += p;
+	}
+
+	template<typename T, qualifier Q>
+	GLM_FUNC_QUALIFIER tquat<T, Q> operator-(tquat<T, Q> const& q, tquat<T, Q> const& p)
+	{
+		return tquat<T, Q>(q) -= p;
 	}
 
 	template<typename T, qualifier Q>
@@ -452,8 +461,8 @@ namespace detail
 	template<typename T, qualifier Q>
 	GLM_FUNC_QUALIFIER tquat<T, Q> mix2
 	(
-		tquat<T, Q> const& x, 
-		tquat<T, Q> const& y, 
+		tquat<T, Q> const& x,
+		tquat<T, Q> const& y,
 		T const& a
 	)
 	{
@@ -482,7 +491,7 @@ namespace detail
 
 		if(flip)
 			alpha = -alpha;
-		
+
 		return normalize(beta * x + alpha * y);
 	}
 */
@@ -527,7 +536,7 @@ namespace detail
 
 		T cosTheta = dot(x, y);
 
-		// If cosTheta < 0, the interpolation will take the long way around the sphere. 
+		// If cosTheta < 0, the interpolation will take the long way around the sphere.
 		// To fix this, one quat must be negated.
 		if (cosTheta < T(0))
 		{
@@ -669,39 +678,20 @@ namespace detail
 		T biggestVal = sqrt(fourBiggestSquaredMinus1 + static_cast<T>(1)) * static_cast<T>(0.5);
 		T mult = static_cast<T>(0.25) / biggestVal;
 
-		tquat<T, Q> Result;
 		switch(biggestIndex)
 		{
 		case 0:
-			Result.w = biggestVal;
-			Result.x = (m[1][2] - m[2][1]) * mult;
-			Result.y = (m[2][0] - m[0][2]) * mult;
-			Result.z = (m[0][1] - m[1][0]) * mult;
-			break;
+			return tquat<T, Q>(biggestVal, (m[1][2] - m[2][1]) * mult, (m[2][0] - m[0][2]) * mult, (m[0][1] - m[1][0]) * mult);
 		case 1:
-			Result.w = (m[1][2] - m[2][1]) * mult;
-			Result.x = biggestVal;
-			Result.y = (m[0][1] + m[1][0]) * mult;
-			Result.z = (m[2][0] + m[0][2]) * mult;
-			break;
+			return tquat<T, Q>((m[1][2] - m[2][1]) * mult, biggestVal, (m[0][1] + m[1][0]) * mult, (m[2][0] + m[0][2]) * mult);
 		case 2:
-			Result.w = (m[2][0] - m[0][2]) * mult;
-			Result.x = (m[0][1] + m[1][0]) * mult;
-			Result.y = biggestVal;
-			Result.z = (m[1][2] + m[2][1]) * mult;
-			break;
+			return tquat<T, Q>((m[2][0] - m[0][2]) * mult, (m[0][1] + m[1][0]) * mult, biggestVal, (m[1][2] + m[2][1]) * mult);
 		case 3:
-			Result.w = (m[0][1] - m[1][0]) * mult;
-			Result.x = (m[2][0] + m[0][2]) * mult;
-			Result.y = (m[1][2] + m[2][1]) * mult;
-			Result.z = biggestVal;
-			break;
-			
-		default:					// Silence a -Wswitch-default warning in GCC. Should never actually get here. Assert is just for sanity.
+			return tquat<T, Q>((m[0][1] - m[1][0]) * mult, (m[2][0] + m[0][2]) * mult, (m[1][2] + m[2][1]) * mult, biggestVal);
+		default: // Silence a -Wswitch-default warning in GCC. Should never actually get here. Assert is just for sanity.
 			assert(false);
-			break;
+			return tquat<T, Q>(1, 0, 0, 0);
 		}
-		return Result;
 	}
 
 	template<typename T, qualifier Q>

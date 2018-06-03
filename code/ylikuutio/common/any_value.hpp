@@ -66,7 +66,8 @@ namespace datatypes
         CONSOLE_POINTER,
         SPHERICAL_COORDINATES_STRUCT_POINTER,
         STD_STRING_POINTER,
-        GLM_VEC3_POINTER
+        GLM_VEC3_POINTER,
+        GLM_VEC4_POINTER
     };
 
     typedef class AnyValue
@@ -93,7 +94,7 @@ namespace datatypes
             AnyValue(double* const double_pointer);
             AnyValue(int32_t* const int32_t_pointer);
             AnyValue(uint32_t* const uint32_t_pointer);
-            AnyValue(ontology::Universe* const universe_pointer);
+            AnyValue(ontology::Universe* const universe);
             AnyValue(ontology::Scene* const scene_pointer);
             AnyValue(ontology::Shader* const shader_pointer);
             AnyValue(ontology::Material* const material_pointer);
@@ -108,6 +109,7 @@ namespace datatypes
             AnyValue(SphericalCoordinatesStruct* const spherical_coordinates_struct_pointer);
             AnyValue(std::string* const std_string_pointer);
             AnyValue(glm::vec3* const glm_vec3_pointer);
+            AnyValue(glm::vec4* const glm_vec4_pointer);
 
             AnyValue(const std::string& type, const bool bool_value);
             AnyValue(const std::string& type, const char char_value);
@@ -120,7 +122,7 @@ namespace datatypes
             AnyValue(const std::string& type, double* const double_pointer);
             AnyValue(const std::string& type, int32_t* const int32_t_pointer);
             AnyValue(const std::string& type, uint32_t* const uint32_t_pointer);
-            AnyValue(const std::string& type, ontology::Universe* const universe_pointer);
+            AnyValue(const std::string& type, ontology::Universe* const universe);
             AnyValue(const std::string& type, ontology::Scene* const scene_pointer);
             AnyValue(const std::string& type, ontology::Shader* const shader_pointer);
             AnyValue(const std::string& type, ontology::Material* const material_pointer);
@@ -135,6 +137,7 @@ namespace datatypes
             AnyValue(const std::string& type, SphericalCoordinatesStruct* const spherical_coordinates_struct_pointer);
             AnyValue(const std::string& type, std::string* const std_string_pointer);
             AnyValue(const std::string& type, glm::vec3* const glm_vec3_pointer);
+            AnyValue(const std::string& type, glm::vec4* const glm_vec3_pointer);
 
             int type;
             bool bool_value;
@@ -148,7 +151,7 @@ namespace datatypes
             double* double_pointer;
             int32_t* int32_t_pointer;
             uint32_t* uint32_t_pointer;
-            ontology::Universe* universe_pointer;
+            ontology::Universe* universe;
             ontology::Scene* scene_pointer;
             ontology::Shader* shader_pointer;
             ontology::Material* material_pointer;
@@ -163,6 +166,7 @@ namespace datatypes
             SphericalCoordinatesStruct* spherical_coordinates_struct_pointer;
             std::string* std_string_pointer;
             glm::vec3* glm_vec3_pointer;
+            glm::vec4* glm_vec4_pointer;
 
         private:
             void set_default_values();

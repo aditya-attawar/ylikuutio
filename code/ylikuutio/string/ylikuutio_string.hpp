@@ -33,6 +33,13 @@ namespace string
             const uint64_t dest_data_size,
             const char* const char_end_string);
 
+    int32_t extract_last_part_of_string(
+            const uint8_t* const src_base_pointer,
+            const uint64_t src_data_size,
+            uint8_t* const dest_base_pointer,
+            const uint64_t dest_data_size,
+            const char separator);
+
     int32_t extract_int32_t_value_from_string(
             const char* const src_base_pointer,
             char*& src_data_pointer,
@@ -56,11 +63,19 @@ namespace string
             const uint32_t first_line_length,
             const uint32_t line_length);
 
+    std::vector<std::string> convert_std_list_char_to_std_vector_std_string(
+            const std::list<char>& std_list_char,
+            const uint32_t line_length);
+
     bool check_if_float_string(const std::string& my_string);
+    bool check_if_double_string(const std::string& my_string);
+    bool check_if_floating_point_string(const std::string& my_string, int32_t safe_number_of_chars);
 
     bool check_if_signed_integer_string(const std::string& my_string);
 
     bool check_if_unsigned_integer_string(const std::string& my_string);
+
+    void print_hexdump(const void* const start_address, const void* const end_address); // `begin` is inclusive, `end is exclusive.
 }
 
 #endif

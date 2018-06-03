@@ -1,15 +1,10 @@
+#ifndef __STDC_FORMAT_MACROS
+// For MinGW.
+#define __STDC_FORMAT_MACROS
+#endif
+
 #include "any_value.hpp"
 #include "spherical_coordinates_struct.hpp"
-#include "code/ylikuutio/ontology/entity.hpp"
-#include "code/ylikuutio/ontology/universe.hpp"
-#include "code/ylikuutio/ontology/scene.hpp"
-#include "code/ylikuutio/ontology/shader.hpp"
-#include "code/ylikuutio/ontology/material.hpp"
-#include "code/ylikuutio/ontology/species.hpp"
-#include "code/ylikuutio/ontology/object.hpp"
-#include "code/ylikuutio/ontology/vector_font.hpp"
-#include "code/ylikuutio/ontology/glyph.hpp"
-#include "code/ylikuutio/ontology/text3D.hpp"
 #include "code/ylikuutio/string/ylikuutio_string.hpp"
 
 // Include GLM
@@ -28,8 +23,14 @@
 #include <stdint.h> // uint32_t etc.
 #include <stdlib.h> // std::strtol, std::strtoll, std::strtoul
 
+namespace console
+{
+    class Console;
+}
+
 namespace ontology
 {
+    class Entity;
     class Universe;
     class Scene;
     class Shader;
@@ -40,16 +41,6 @@ namespace ontology
     class Glyph;
     class Text3D;
     class Symbiosis;
-}
-
-namespace font2D
-{
-    class Font2D;
-}
-
-namespace console
-{
-    class Console;
 }
 
 namespace datatypes
@@ -112,6 +103,8 @@ namespace datatypes
                 return "std::string*";
             case (GLM_VEC3_POINTER):
                 return "glm::vec3*";
+            case (GLM_VEC4_POINTER):
+                return "glm::vec4*";
             default:
                 return "TODO: define string for this datatype!";
         }
@@ -164,7 +157,7 @@ namespace datatypes
                 std::snprintf(buffer, sizeof(buffer), "%" PRIx64, (uint64_t) this->uint32_t_pointer);
                 return std::string(buffer);
             case (UNIVERSE_POINTER):
-                std::snprintf(buffer, sizeof(buffer), "%" PRIx64, (uint64_t) this->universe_pointer);
+                std::snprintf(buffer, sizeof(buffer), "%" PRIx64, (uint64_t) this->universe);
                 return std::string(buffer);
             case (SCENE_POINTER):
                 std::snprintf(buffer, sizeof(buffer), "%" PRIx64, (uint64_t) this->scene_pointer);
@@ -229,6 +222,20 @@ namespace datatypes
                             this->glm_vec3_pointer->z);
                 }
                 return std::string(buffer);
+            case (GLM_VEC4_POINTER):
+                if (this->glm_vec4_pointer == nullptr)
+                {
+                    std::snprintf(buffer, sizeof(buffer), "nullptr");
+                }
+                else
+                {
+                    std::snprintf(buffer, sizeof(buffer), "{ %f, %f, %f, %f }",
+                            this->glm_vec4_pointer->x,
+                            this->glm_vec4_pointer->y,
+                            this->glm_vec4_pointer->z,
+                            this->glm_vec4_pointer->w);
+                }
+                return std::string(buffer);
             default:
                 return "TODO: define string for this datatype!";
         }
@@ -239,23 +246,23 @@ namespace datatypes
         switch (this->type)
         {
             case (UNIVERSE_POINTER):
-                return this->universe_pointer;
+                return static_cast<ontology::Entity*>(static_cast<void*>(this->universe));
             case (SCENE_POINTER):
-                return this->scene_pointer;
+                return static_cast<ontology::Entity*>(static_cast<void*>(this->scene_pointer));
             case (SHADER_POINTER):
-                return this->shader_pointer;
+                return static_cast<ontology::Entity*>(static_cast<void*>(this->shader_pointer));
             case (MATERIAL_POINTER):
-                return this->material_pointer;
+                return static_cast<ontology::Entity*>(static_cast<void*>(this->material_pointer));
             case (SPECIES_POINTER):
-                return this->species_pointer;
+                return static_cast<ontology::Entity*>(static_cast<void*>(this->species_pointer));
             case (OBJECT_POINTER):
-                return this->object_pointer;
+                return static_cast<ontology::Entity*>(static_cast<void*>(this->object_pointer));
             case (VECTORFONT_POINTER):
-                return this->vector_font_pointer;
+                return static_cast<ontology::Entity*>(static_cast<void*>(this->vector_font_pointer));
             case (GLYPH_POINTER):
-                return this->glyph_pointer;
+                return static_cast<ontology::Entity*>(static_cast<void*>(this->glyph_pointer));
             case (TEXT3D_POINTER):
-                return this->text3D_pointer;
+                return static_cast<ontology::Entity*>(static_cast<void*>(this->text3D_pointer));
             default:
                 return nullptr;
         }
@@ -309,7 +316,7 @@ namespace datatypes
                 }
             case (DOUBLE):
                 {
-                    if (!string::check_if_float_string(value_string))
+                    if (!string::check_if_double_string(value_string))
                     {
                         return false;
                     }
@@ -448,12 +455,12 @@ namespace datatypes
 
                     // 0 means that the base is determined by the format given in string.
                     // The size of the pointer is assumed to be 64 bits.
-                    ontology::Universe* universe_pointer = (ontology::Universe*) (std::strtoll(value_string.c_str(), &end, 0));
+                    ontology::Universe* universe = (ontology::Universe*) (std::strtoll(value_string.c_str(), &end, 0));
                     if (errno == ERANGE)
                     {
                         return false;
                     }
-                    this->universe_pointer = universe_pointer;
+                    this->universe = universe;
                     return true;
                 }
             case (SCENE_POINTER):
@@ -656,6 +663,21 @@ namespace datatypes
                     this->glm_vec3_pointer = glm_vec3_pointer;
                     return true;
                 }
+            case (GLM_VEC4_POINTER):
+                {
+                    if (!string::check_if_unsigned_integer_string(value_string))
+                    {
+                        return false;
+                    }
+
+                    glm::vec4* glm_vec4_pointer = (glm::vec4*) (std::strtoll(value_string.c_str(), &end, 0));
+                    if (errno == ERANGE)
+                    {
+                        return false;
+                    }
+                    this->glm_vec4_pointer = glm_vec4_pointer;
+                    return true;
+                }
             default:
                 return false;
         }
@@ -675,7 +697,7 @@ namespace datatypes
         this->double_pointer = nullptr;
         this->int32_t_pointer = nullptr;
         this->uint32_t_pointer = nullptr;
-        this->universe_pointer = nullptr;
+        this->universe = nullptr;
         this->scene_pointer = nullptr;
         this->shader_pointer = nullptr;
         this->material_pointer = nullptr;
@@ -690,6 +712,7 @@ namespace datatypes
         this->spherical_coordinates_struct_pointer = nullptr;
         this->std_string_pointer = nullptr;
         this->glm_vec3_pointer = nullptr;
+        this->glm_vec4_pointer = nullptr;
     }
 
     AnyValue::AnyValue(const datatypes::AnyValue& original)
@@ -707,7 +730,7 @@ namespace datatypes
         this->double_pointer = original.double_pointer;
         this->int32_t_pointer = original.int32_t_pointer;
         this->uint32_t_pointer = original.uint32_t_pointer;
-        this->universe_pointer = original.universe_pointer;
+        this->universe = original.universe;
         this->scene_pointer = original.scene_pointer;
         this->shader_pointer = original.shader_pointer;
         this->material_pointer = original.material_pointer;
@@ -720,7 +743,9 @@ namespace datatypes
         this->font2D_pointer = original.font2D_pointer;
         this->console_pointer = original.console_pointer;
         this->spherical_coordinates_struct_pointer = original.spherical_coordinates_struct_pointer;
+        this->std_string_pointer = original.std_string_pointer;
         this->glm_vec3_pointer = original.glm_vec3_pointer;
+        this->glm_vec4_pointer = original.glm_vec4_pointer;
     }
 
     AnyValue::AnyValue(const std::string& type, const std::string& value_string)
@@ -1074,15 +1099,15 @@ namespace datatypes
         }
     }
 
-    AnyValue::AnyValue(ontology::Universe* const universe_pointer)
+    AnyValue::AnyValue(ontology::Universe* const universe)
     {
         // constructor.
         this->set_default_values();
         this->type = datatypes::UNIVERSE_POINTER;
-        this->universe_pointer = universe_pointer;
+        this->universe = universe;
     }
 
-    AnyValue::AnyValue(const std::string& type, ontology::Universe* const universe_pointer)
+    AnyValue::AnyValue(const std::string& type, ontology::Universe* const universe)
     {
         // constructor.
         this->set_default_values();
@@ -1090,7 +1115,7 @@ namespace datatypes
         if (std::strcmp(type.c_str(), "ontology::Universe*") == 0)
         {
             this->type = datatypes::UNIVERSE_POINTER;
-            this->universe_pointer = universe_pointer;
+            this->universe = universe;
         }
     }
 
@@ -1351,6 +1376,26 @@ namespace datatypes
         {
             this->type = datatypes::GLM_VEC3_POINTER;
             this->glm_vec3_pointer = glm_vec3_pointer;
+        }
+    }
+
+    AnyValue::AnyValue(glm::vec4* const glm_vec4_pointer)
+    {
+        // constructor.
+        this->set_default_values();
+        this->type = datatypes::GLM_VEC4_POINTER;
+        this->glm_vec4_pointer = glm_vec4_pointer;
+    }
+
+    AnyValue::AnyValue(const std::string& type, glm::vec4* const glm_vec4_pointer)
+    {
+        // constructor.
+        this->set_default_values();
+
+        if (std::strcmp(type.c_str(), "glm::vec4*") == 0)
+        {
+            this->type = datatypes::GLM_VEC4_POINTER;
+            this->glm_vec4_pointer = glm_vec4_pointer;
         }
     }
 }

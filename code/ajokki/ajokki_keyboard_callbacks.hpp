@@ -2,12 +2,17 @@
 #define __AJOKKI_KEYBOARD_CALLBACKS_HPP_INCLUDED
 
 #include "code/ylikuutio/common/any_value.hpp"
-#include "code/ylikuutio/callback_system/callback_parameter.hpp"
-#include "code/ylikuutio/callback_system/callback_object.hpp"
-#include "code/ylikuutio/callback_system/callback_engine.hpp"
 
 // Include standard headers
 #include <memory> // std::make_shared, std::shared_ptr
+#include <vector> // std::vector
+
+namespace callback_system
+{
+    class CallbackEngine;
+    class CallbackObject;
+    class CallbackParameter;
+}
 
 namespace ajokki
 {
@@ -104,20 +109,20 @@ namespace ajokki
             callback_system::CallbackObject* callback_object,
             std::vector<callback_system::CallbackParameter*>&);
 
-    std::shared_ptr<datatypes::AnyValue> delete_suzanne_species(
+    std::shared_ptr<datatypes::AnyValue> delete_entity(
             callback_system::CallbackEngine*,
             callback_system::CallbackObject* callback_object,
-            std::vector<callback_system::CallbackParameter*>& input_parameters);
+            std::vector<callback_system::CallbackParameter*>&);
 
     std::shared_ptr<datatypes::AnyValue> switch_to_new_material(
             callback_system::CallbackEngine*,
             callback_system::CallbackObject* callback_object,
-            std::vector<callback_system::CallbackParameter*>& input_parameters);
+            std::vector<callback_system::CallbackParameter*>&);
 
     std::shared_ptr<datatypes::AnyValue> transform_into_new_species(
             callback_system::CallbackEngine*,
             callback_system::CallbackObject* callback_object,
-            std::vector<callback_system::CallbackParameter*>& input_parameters);
+            std::vector<callback_system::CallbackParameter*>&);
 }
 
 #endif

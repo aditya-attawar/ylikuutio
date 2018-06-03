@@ -9,7 +9,7 @@
 
 #include "bmp_heightmap_loader.hpp"
 #include "bmp_loader.hpp"
-#include "code/ylikuutio/geometry/spherical_world_struct.hpp"
+#include "code/ylikuutio/geometry/spherical_terrain_struct.hpp"
 #include "code/ylikuutio/triangulation/triangulate_quads_struct.hpp"
 #include "code/ylikuutio/triangulation/quad_triangulation.hpp"
 #include "code/ylikuutio/common/pi.hpp"
@@ -22,6 +22,7 @@
 
 // Include standard headers
 #include <cmath>    // NAN, std::isnan, std::pow
+#include <cstddef>  // std::size_t
 #include <cstdio>   // std::FILE, std::fclose, std::fopen, std::fread, std::getchar, std::printf etc.
 #include <cstring>  // std::memcmp, std::strcmp, std::strlen, std::strncmp
 #include <iostream> // std::cout, std::cin, std::cerr
@@ -31,13 +32,13 @@
 
 namespace loaders
 {
-    bool load_BMP_world(
+    bool load_BMP_terrain(
             const std::string& image_path,
             std::vector<glm::vec3>& out_vertices,
             std::vector<glm::vec2>& out_UVs,
             std::vector<glm::vec3>& out_normals,
-            int32_t& image_width,
-            int32_t& image_height,
+            int32_t* image_width_pointer,
+            int32_t* image_height_pointer,
             const std::string& color_channel,
             const int32_t x_step,
             const int32_t z_step,
@@ -48,9 +49,20 @@ namespace loaders
             return false;
         }
 
-        int32_t image_size;
+        if (image_width_pointer == nullptr || image_height_pointer == nullptr)
+        {
+            return false;
+        }
+
+        std::size_t image_size;
+
+        int32_t image_width;
+        int32_t image_height;
 
         uint8_t* image_data = load_BMP_file(image_path, image_width, image_height, image_size);
+
+        *image_width_pointer = image_width;
+        *image_height_pointer = image_height;
 
         if (image_width < 2 || image_height < 2)
         {
@@ -58,15 +70,15 @@ namespace loaders
             return false;
         }
 
-        // Define world size.
-        int32_t world_size = image_width * image_height;
+        // Define terrain size.
+        int32_t terrain_size = image_width * image_height;
 
         int32_t line_size_in_bytes = image_size / image_height;
 
         uint8_t *image_pointer;
         image_pointer = image_data;
 
-        float* vertex_data = new float[world_size];
+        float* vertex_data = new float[terrain_size];
 
         if (vertex_data == nullptr)
         {
@@ -130,7 +142,7 @@ namespace loaders
         triangulate_quads_struct.z_step = z_step;
         triangulate_quads_struct.triangulation_type = triangulation_type;
         triangulate_quads_struct.sphere_radius = NAN;
-        triangulate_quads_struct.spherical_world_struct = geometry::SphericalWorldStruct(); // not used, but is needed in the function call.
+        triangulate_quads_struct.spherical_terrain_struct = geometry::SphericalTerrainStruct(); // not used, but is needed in the function call.
 
         bool result = geometry::triangulate_quads(vertex_data, triangulate_quads_struct, out_vertices, out_UVs, out_normals);
         delete[] vertex_data;

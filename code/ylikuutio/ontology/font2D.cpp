@@ -1,7 +1,4 @@
 #include "font2D.hpp"
-#include "entity_templates.hpp"
-#include "code/ylikuutio/loaders/shader_loader.hpp"
-#include "code/ylikuutio/loaders/texture_loader.hpp"
 
 // Include GLEW
 #ifndef __GL_GLEW_H_INCLUDED
@@ -23,74 +20,13 @@
 // Include standard headers
 #include <vector>   // std::vector
 #include <cstring>  // std::memcmp, std::strcmp, std::strlen, std::strncmp
+#include <iostream> // std::cout, std::cin, std::cerr
 #include <stdint.h> // uint32_t etc.
 #include <string>   // std::string
 
 namespace ontology
 {
     class Universe;
-
-    Font2D::Font2D(
-            ontology::Universe* universe_pointer,
-            GLuint screen_width,
-            GLuint screen_height,
-            std::string texture_filename,
-            std::string font_texture_file_format)
-    {
-        // constructor.
-
-        // Initialize class members with some dummy values.
-        this->vertexbuffer = 0;
-        this->uvbuffer = 0;
-        this->programID = 0;
-        this->vertex_position_in_screenspaceID = 0;
-        this->vertexUVID = 0;
-        this->Text2DUniformID = 0;
-        this->screen_width_uniform_ID = 0;
-        this->screen_height_uniform_ID = 0;
-
-        const char* char_font_texture_file_format = font_texture_file_format.c_str();
-
-        // Initialize texture
-        if ((std::strcmp(char_font_texture_file_format, "bmp") == 0) || (std::strcmp(char_font_texture_file_format, "BMP") == 0))
-        {
-            this->texture = loaders::load_BMP_texture(texture_filename);
-        }
-        else if ((std::strcmp(char_font_texture_file_format, "dds") == 0) || (std::strcmp(char_font_texture_file_format, "DDS") == 0))
-        {
-            this->texture = loaders::load_DDS_texture(texture_filename);
-        }
-        else
-        {
-            printf("Invalid font texture file format: `%s`. Supported font texture file formats: bmp, BMP, dds, DDS.\n", char_font_texture_file_format);
-            this->texture = 0;
-            return;
-        }
-
-        // Initialize VBO
-        glGenBuffers(1, &vertexbuffer);
-        glGenBuffers(1, &uvbuffer);
-
-        // Initialize Shader
-        programID = loaders::load_shaders("TextVertexShader.vertexshader", "TextVertexShader.fragmentshader");
-
-        // Get a handle for our buffers
-        vertex_position_in_screenspaceID = glGetAttribLocation(programID, "vertexPosition_screenspace");
-        vertexUVID = glGetAttribLocation(programID, "vertexUV");
-
-        // Initialize uniforms' IDs
-        Text2DUniformID = glGetUniformLocation(programID, "myTextureSampler");
-
-        // Initialize uniform window width.
-        screen_width_uniform_ID = glGetUniformLocation(programID, "screen_width");
-        glUniform1i(screen_width_uniform_ID, screen_width);
-
-        // Initialize uniform window height.
-        screen_height_uniform_ID = glGetUniformLocation(programID, "screen_height");
-        glUniform1i(screen_height_uniform_ID, screen_height);
-
-        this->universe_pointer = universe_pointer;
-    }
 
     Font2D::~Font2D()
     {
@@ -107,12 +43,18 @@ namespace ontology
         glDeleteProgram(programID);
     }
 
-    int32_t Font2D::get_number_of_children()
+    ontology::Entity* Font2D::get_parent() const
+    {
+        // Currently `Font2D`'s do not any parents.
+        return nullptr;
+    }
+
+    int32_t Font2D::get_number_of_children() const
     {
         return -1;
     }
 
-    int32_t Font2D::get_number_of_descendants()
+    int32_t Font2D::get_number_of_descendants() const
     {
         return -1;
     }
@@ -124,10 +66,10 @@ namespace ontology
             GLuint y,
             GLuint text_size,
             GLuint font_size,
-            const char* text_char,
-            const char* char_font_texture_file_format,
-            const char* horizontal_alignment,
-            const char* vertical_alignment)
+            const char* const text_char,
+            const char* const char_font_texture_file_format,
+            const char* const horizontal_alignment,
+            const char* const vertical_alignment) const
     {
         // If horizontal alignment is `"left"`, each line begins from the same x coordinate.
         // If horizontal alignment is `"left"` and vertical alignment is `"top"`,
@@ -267,6 +209,11 @@ namespace ontology
                 // BMP is stored in the file beginning from the bottom line.
                 uv_y = 1 - (character / font_size) / (GLfloat) font_size;
             }
+            else
+            {
+                std::cerr << "invalid char_font_texture_file_format " << std::string(char_font_texture_file_format) << "\n";
+                return;
+            }
 
             glm::vec2 uv_up_left = glm::vec2(uv_x, uv_y);
             glm::vec2 uv_up_right = glm::vec2(uv_x + (1.0f / (GLfloat) font_size), uv_y);
@@ -335,7 +282,7 @@ namespace ontology
         glDisableVertexAttribArray(vertexUVID);
     }
 
-    void Font2D::printText2D(PrintingStruct printing_struct)
+    void Font2D::printText2D(const PrintingStruct& printing_struct)
     {
         if (printing_struct.text.empty())
         {
@@ -374,14 +321,9 @@ namespace ontology
             GLuint y,
             GLuint text_size,
             GLuint font_size,
-            const char* text_char,
-            const char* char_font_texture_file_format)
+            const char* const text_char,
+            const char* const char_font_texture_file_format)
     {
         printText2D(screen_width, screen_height, x, y, text_size, font_size, text_char, char_font_texture_file_format, "left", "bottom");
-    }
-
-    void Font2D::set_name(std::string name)
-    {
-        ontology::set_name(name, this);
     }
 }

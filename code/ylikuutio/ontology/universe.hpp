@@ -2,6 +2,10 @@
 #define __UNIVERSE_HPP_INCLUDED
 
 #include "entity.hpp"
+#include "entity_factory.hpp"
+#include "universe_struct.hpp"
+#include "camera_struct.hpp"
+#include "code/ylikuutio/opengl/opengl.hpp"
 #include "code/ylikuutio/common/any_value.hpp"
 #include "code/ylikuutio/common/globals.hpp"
 
@@ -24,26 +28,29 @@
 #endif
 
 // Include standard headers
-#include <iostream> // std::cout, std::cin, std::cerr
-#include <memory>   // std::make_shared, std::shared_ptr
-#include <queue>    // std::queue
+#include <cmath>         // NAN, std::isnan, std::pow
+#include <iostream>      // std::cout, std::cin, std::cerr
+#include <memory>        // std::make_shared, std::shared_ptr
+#include <queue>         // std::queue
 #include <unordered_map> // std::unordered_map
-#include <stdint.h> // uint32_t etc.
-#include <string>   // std::string
-#include <vector>   // std::vector
+#include <stdint.h>      // uint32_t etc.
+#include <string>        // std::string
+#include <vector>        // std::vector
 
 // `Universe`, `Scene`, `Shader`, `Material`, `Species`, `Object`.
 // `Universe`, `Scene`, `Shader`, `Material`, `VectorFont`, `Glyph`, `Object`.
-// `Universe` must be created before any `Scene`. `parent_pointer` must be given to each `Scene`.
-// `Scene` must be created before any `Shader`. `parent_pointer` must be given to each `Shader`.
-// `Shader` must be created before any `Material`. `parent_pointer` must be given to each `Material`.
-// `Material` must be created before any `Species`. `parent_pointer` must be given to each `Species`.
-// `Species` must be create before any `Object` of that `Species`. `parent_pointer` must be given to each `Object` of the `Species`.
+// `Universe` must be created before any `Scene`. `parent` must be given to each `Scene`.
+// `Scene` must be created before any `Shader`. `parent` must be given to each `Shader`.
+// `Shader` must be created before any `Material`. `parent` must be given to each `Material`.
+// `Material` must be created before any `Species`. `parent` must be given to each `Species`.
+// `Species` must be create before any `Object` of that `Species`. `parent` must be given to each `Object` of the `Species`.
 //
 //
-// Hierarchy of regular `Object`s (including terrain species):
+// Hierarchy of regular `Object`s (including terrain `Species`):
 //
 //    Universe
+//       ^
+//     World
 //       ^
 //     Scene
 //       ^
@@ -57,9 +64,11 @@
 //
 // Please note that for regular `Object`s the hierarchy above is both the ontological hierarchy and the rendering hierarchy.
 //
-// Ontological hierarchy of `Glyph` (character) objects:
+// Ontological hierarchy of `Glyph` (character) entities:
 //
 //    Universe
+//       ^
+//     World
 //       ^
 //     Scene
 //       ^
@@ -76,9 +85,11 @@
 // Ontological hierarchy affects how objects can be created and how they can be destroyed,
 // though the precise ways how objects can be created depends on the functions available.
 //
-// Rendering hierarchy of `Glyph` (character) objects:
+// Rendering hierarchy of `Glyph` (character) entities:
 //
 //    Universe
+//       ^
+//     World
 //       ^
 //     Scene
 //       ^
@@ -97,49 +108,127 @@
 // even if the children (which are of type `Object`) may belong to many different `Text3D` objects.
 // `Text3D` is anyway needed in the ontological hierarchy, so that complete 3D texts can be destroyed and manipulated at once.
 //
-// Ontological hierarchy of `Symbiosis` objects:
+// Ontological hierarchy of `Symbiosis` entities:
 //
 //    Universe
 //       ^
-//     Scene
+//     World
 //       ^
-//   Symbiosis
+//     Scene
 //       ^
 //     Shader
 //       ^
-//    Material
+//   Symbiosis < SymbiontMaterial
+//       ^              ^
+//   Holobiont   SymbiontSpecies
 //       ^
-//    Species
-//       ^
-//     Object
+//     Biont
+//
+// Each `Holobiont` is a composite organism which consists of 0 more `Bionts`.
+// The `Biont`s of the `Holobiont` each belong to their corresponding
+// `SymbiontSpecies`.
+//
+// For more information about holobionts, check Wikipedia:
+// https://en.wikipedia.org/wiki/Holobiont
 //
 // Ontological hierarchy affects how objects can be created and how they can be destroyed,
 // though the precise ways how objects can be created depends on the functions available.
 //
-// Rendering hierarchy of `Symbiosis` objects:
+// Rendering hierarchy of `Symbiosis` entities:
 //
 //    Universe
+//       ^
+//     World
 //       ^
 //     Scene
 //       ^
 //     Shader
 //       ^
-//    Material
+//   Symbiosis > SymbiontMaterial
+//       ^              v
+//   Holobiont   SymbiontSpecies
 //       ^
-//    Species
-//       ^
-//     Object
+//     Biont
 //
-// Please note that `Symbiosis` is ignored completely in rendering hierarchy.
+// Optimized rendering hierarchy of `Symbiosis` entities:
 //
-// Deleting a `Universe` also deletes all scenes, all shaders, materials, species, fonts, glyphs and objects that are bound to the same `Universe`.
-// Deleting a `Scene` also deletes all shaders, materials, species, fonts, glyphs and objects that are bound to the same `Universe`.
+//      Universe
+//         ^
+//       World
+//         ^
+//       Scene
+//         ^
+//       Shader
+//         ^
+//     Symbiosis
+//         ^
+//  SymbiontMaterial
+//         ^
+//  SymbiontSpecies
+//         ^
+//       Biont
+//
+// TODO: implement optimized rendering hierarchy for `Symbiosis` entities!
+//
+// Ontological hierarchy of `ShaderSymbiosis` entities:
+//
+//      Universe
+//         ^
+//       World
+//         ^
+//       Scene
+//         ^
+//  ShaderSymbiosis < SymbiontShader
+//         ^                ^
+//     Holobiont     SymbiontMaterial
+//         ^                ^
+//       Biont       SymbiontSpecies
+//
+// Rendering hierarchy of `ShaderSymbiosis` entities:
+//
+//      Universe
+//         ^
+//       World
+//         ^
+//       Scene
+//         ^
+//  ShaderSymbiosis > SymbiontShader
+//         ^                v
+//     Holobiont     SymbiontMaterial
+//         ^                v
+//       Biont       SymbiontSpecies
+//
+// TODO: implement `ShaderSymbiosis` entities!
+//
+// Optimized rendering hierarchy of `ShaderSymbiosis` entities:
+//
+//      Universe
+//         ^
+//       World
+//         ^
+//       Scene
+//         ^
+//  ShaderSymbiosis
+//         ^
+//   SymbiontShader
+//         ^
+//  SymbiontMaterial
+//         ^
+//  SymbiontSpecies
+//         ^
+//       Biont
+//
+// TODO: implement optimized rendering hierarchy for `ShaderSymbiosis` entities!
+//
+// Deleting a `Universe` also deletes all worlds, scenes, all shaders, materials, species, fonts, glyphs and objects that are bound to the same `Universe`.
+// Deleting a `World` also deletes all scenes, all shaders, materials, species, fonts, glyphs and objects that are bound to the same `World`.
+// Deleting a `Scene` also deletes all shaders, materials, species, fonts, glyphs and objects that are bound to the same `Scene`.
 // Deleting a `Shader` also deletes all materials, species, fonts, glyphs and objects that are bound to the same `Shader`.
 // Deleting a `Material` also deletes all species, fonts, glyphs and objects that are bound to the same `Material`.
 // Deleting a `Species` also deletes all objects that are bound to the same `Species`.
 // Deleting an `Object` only deletes the object.
 
-// Characteristics of object type graphs:
+// Characteristics of object type graphs: TODO: implement object type graphs!
 // 1. Each object must be an undirected graph.
 // 2. Each edge must be a link in the graph.
 // 3. The faces of each object must form a closed surface. The only exception is the terrain object, which may have borders.
@@ -171,7 +260,6 @@
 namespace config
 {
     class Setting;
-    class SettingMaster;
 }
 
 namespace console
@@ -181,15 +269,111 @@ namespace console
 
 namespace ontology
 {
+    class World;
     class Scene;
-    class Shader;
-    class Object;
+    class Species;
 
     class Universe: public ontology::Entity
     {
         public:
+            void bind(ontology::World* const world);
+
             // constructor.
-            Universe();
+            Universe(const UniverseStruct& universe_struct)
+                : Entity(this) // `Universe` has no parent.
+            {
+                this->entity_factory = new ontology::EntityFactory(this);
+
+                this->current_camera_cartesian_coordinates = glm::vec3(NAN, NAN, NAN); // dummy coordinates.
+
+                this->current_camera_spherical_coordinates.rho = NAN;   // dummy coordinates.
+                this->current_camera_spherical_coordinates.theta = NAN; // dummy coordinates.
+                this->current_camera_spherical_coordinates.phi = NAN;   // dummy coordinates.
+
+                this->planet_radius = NAN; // world radius is NAN as long it doesn't get `set` by `SettingMaster`.
+                this->terrain_species = nullptr;
+                this->active_world = nullptr;
+                this->console_pointer = nullptr;
+
+                this->background_red = NAN;
+                this->background_green = NAN;
+                this->background_blue = NAN;
+                this->background_alpha = NAN;
+
+                // Variables related to the window.
+                this->window = nullptr;
+                this->window_width = universe_struct.window_width;
+                this->window_height = universe_struct.window_height;
+                this->window_title = universe_struct.window_title;
+                this->is_headless = universe_struct.is_headless;
+
+                this->current_camera_projection_matrix = glm::mat4(1.0f); // identity matrix (dummy value).
+                this->current_camera_view_matrix = glm::mat4(1.0f);       // identity matrix (dummy value).
+                this->current_camera_horizontal_angle = NAN;
+                this->current_camera_vertical_angle = NAN;
+
+                // Variables related to the camera.
+                this->aspect_ratio = static_cast<GLfloat>(this->window_width / this->window_height);
+                this->initialFoV = 60.0f;
+
+                this->text_size = universe_struct.text_size;
+                this->font_size = universe_struct.font_size;
+
+                this->max_FPS = universe_struct.max_FPS;
+                this->delta_time = NAN;
+                this->last_time_before_reading_keyboard = NAN;
+                this->current_time_before_reading_keyboard = NAN;
+
+                this->has_mouse_ever_moved = false;
+                this->can_toggle_invert_mouse = false;
+                this->is_invert_mouse_in_use = false;
+                this->can_toggle_flight_mode = false;
+                this->is_flight_mode_in_use = false;
+                this->is_first_turbo_pressed = false;
+                this->is_second_turbo_pressed = false;
+
+                this->turbo_factor = NAN;
+                this->twin_turbo_factor = NAN;
+
+                this->speed = universe_struct.speed;
+                this->mouse_speed = universe_struct.mouse_speed;
+
+                this->gravity = universe_struct.gravity;
+                this->fall_speed = this->gravity;
+
+                this->testing_spherical_terrain_in_use = false;
+                this->is_key_I_released = true;
+                this->is_key_F_released = true;
+                this->in_help_mode = true;
+                this->can_toggle_help_mode = false;
+                this->can_display_help_screen = true;
+
+                this->number_of_worlds = 0;
+
+                this->child_vector_pointers_vector.push_back(&this->world_pointer_vector);
+                this->type = "ontology::Universe*";
+
+                // Initialise GLFW
+                if (!ylikuutio::opengl::init_window())
+                {
+                    std::cerr << "Failed to initialize GLFW.\n";
+                    return;
+                }
+
+                // Open a window and create its OpenGL context.
+                std::cout << "Opening a window and creating its OpenGL context...\n";
+                this->set_window(
+                        ylikuutio::opengl::create_window(
+                            static_cast<int>(this->window_width),
+                            static_cast<int>(this->window_height),
+                            this->window_title.c_str(),
+                            nullptr,
+                            nullptr));
+
+                // Disable vertical sync.
+                // TODO: add option to enable/disable vsync in the console.
+                glfwSwapInterval(0);
+            }
 
             // destructor.
             virtual ~Universe();
@@ -197,9 +381,34 @@ namespace ontology
             // this method renders the active `Scene` of this `Universe`.
             void render();
 
-            int32_t get_number_of_children() override;
+            // this method stes the active `World`.
+            void set_active_world(ontology::World* const world);
 
-            int32_t get_number_of_descendants() override;
+            // this method stes the active `Scene`.
+            void set_active_scene(ontology::Scene* const world);
+
+            console::Console* get_console() const;
+            void set_console(console::Console* console);
+
+            float get_planet_radius() const;
+            void set_planet_radius(float planet_radius);
+
+            // this method sets a `World` pointer.
+            void set_world_pointer(int32_t childID, ontology::World* child_pointer);
+
+            // this method returns a terrain `Species` pointer.
+            ontology::Species* get_terrain_species();
+
+            // this method sets a terrain `Species` pointer.
+            void set_terrain_species(ontology::Species* terrain_species);
+
+            int32_t get_number_of_worlds() const;
+
+            ontology::World* get_active_world() const;
+
+            ontology::Entity* get_parent() const override;
+            int32_t get_number_of_children() const override;
+            int32_t get_number_of_descendants() const override;
 
             // this method sets a new `window`.
             void set_window(GLFWwindow* window);
@@ -208,16 +417,16 @@ namespace ontology
             GLFWwindow* get_window() const;
 
             // this method returns current `window_width`.
-            uint32_t get_window_width() const;
+            int32_t get_window_width() const;
 
             // this method returns current `window_height`.
-            uint32_t get_window_height() const;
+            int32_t get_window_height() const;
 
             // this method returns current `text_size`.
-            uint32_t get_text_size() const;
+            int32_t get_text_size() const;
 
             // this method returns current `font_size`.
-            uint32_t get_font_size() const;
+            int32_t get_font_size() const;
 
             // this method computes the new delta time and returns it.
             float compute_delta_time();
@@ -236,18 +445,39 @@ namespace ontology
             // this method returns a pointer to `config::Setting` corresponding to the given `key`.
             config::Setting* get(std::string key) const;
 
+            bool is_entity(const std::string& name) const;
+            ontology::Entity* get_entity(const std::string& name) const;
             std::string get_entity_names() const;
+
+            void add_entity(const std::string& name, ontology::Entity* const entity);
+            void erase_entity(const std::string& name);
+
+            ontology::EntityFactory* get_entity_factory() const;
+
+            glm::mat4& get_projection_matrix();
+            void set_projection_matrix(glm::mat4& projection_matrix);
+
+            glm::mat4& get_view_matrix();
+            void set_view_matrix(glm::mat4& view_matrix);
+
+            GLfloat get_aspect_ratio();
+            GLfloat get_initialFoV();
 
             // Public callbacks.
 
             static std::shared_ptr<datatypes::AnyValue> delete_entity(
                     console::Console* const console,
-                    ontology::Universe* const universe,
+                    ontology::Entity* const entity,
+                    std::vector<std::string>& command_parameters);
+
+            static std::shared_ptr<datatypes::AnyValue> activate(
+                    console::Console* const console,
+                    ontology::Entity* const universe_entity,
                     std::vector<std::string>& command_parameters);
 
             static std::shared_ptr<datatypes::AnyValue> info(
                     console::Console* const console,
-                    ontology::Universe* const universe,
+                    ontology::Entity* const entity,
                     std::vector<std::string>& command_parameters);
 
             // Public callbacks end here.
@@ -255,19 +485,19 @@ namespace ontology
             // Variables related to location and orientation.
 
             // `cartesian_coordinates` can be accessed as a vector or as single coordinates `x`, `y`, `z`.
-            glm::vec3* cartesian_coordinates;
+            glm::vec3 current_camera_cartesian_coordinates;
 
             // `spherical_coordinates` can be accessed as a vector or as single coordinates `rho`, `theta`, `phi`.
-            SphericalCoordinatesStruct* spherical_coordinates;
+            SphericalCoordinatesStruct current_camera_spherical_coordinates;
 
             // `direction` can be accessed as a vector or as single coordinates `pitch`, `roll`, `yaw`.
-            glm::vec3 direction;
+            glm::vec3 current_camera_direction;
 
-            glm::vec3 right; // note: `right` can not be set directly using console.
-            glm::vec3 up;    // note: `up` can not be set directly using console.
+            glm::vec3 current_camera_right; // note: `right` can not be set directly using console.
+            glm::vec3 current_camera_up;    // note: `up` can not be set directly using console.
 
-            double horizontal_angle;
-            double vertical_angle;
+            double current_camera_horizontal_angle;
+            double current_camera_vertical_angle;
 
             float speed;
             float turbo_factor;
@@ -286,7 +516,7 @@ namespace ontology
             float fall_speed;
 
             // Variables related to the current `Scene`.
-            bool testing_spherical_world_in_use;
+            bool testing_spherical_terrain_in_use;
 
             // Variables related to debug & testing keys.
             bool is_key_I_released;
@@ -297,52 +527,25 @@ namespace ontology
             bool can_toggle_help_mode;
             bool can_display_help_screen;
 
-            friend class Entity;
-            friend class Scene;
-            friend class Shader;
-            friend class Material;
-            friend class Species;
-            friend class Object;
-            friend class VectorFont;
-            friend class Glyph;
-            friend class Text3D;
-            friend class Font2D;
-            friend class config::Setting;
-            friend class config::SettingMaster;
-            friend class console::Console;
-
-            template<class T1>
-                friend void set_name(const std::string name, T1 entity);
-            template<class T1>
-                friend void render_this_object(ontology::Object* object_pointer, ontology::Shader* shader_pointer);
-
         private:
-            // this method sets a `Scene` pointer.
-            void set_scene_pointer(int32_t childID, ontology::Scene* child_pointer);
+            bool compute_and_update_matrices_from_inputs();
 
-            // this method stes the active `Scene`.
-            void set_active_scene(ontology::Scene* scene);
+            void* terrain_species;               // pointer to terrain `Species` (used in collision detection).
 
-            // this method sets a terrain `Species` pointer.
-            void set_terrain_species_pointer(ontology::Species* terrain_species_pointer);
+            float planet_radius;
 
-            bool compute_matrices_from_inputs();
+            ontology::EntityFactory* entity_factory;
 
-            void* terrain_species_pointer;              // pointer to terrain `Species` (used in collision detection).
+            std::vector<ontology::World*> world_pointer_vector;
+            std::queue<int32_t> free_worldID_queue;
+            int32_t number_of_worlds;
 
-            float world_radius;
+            ontology::World* active_world;
 
-            std::vector<ontology::Scene*> scene_pointer_vector;
-            std::queue<int32_t> free_sceneID_queue;
-            int32_t number_of_scenes;
-
-            ontology::Scene* active_scene;
-
-            config::SettingMaster* setting_master_pointer; // pointer to `SettingMaster`.
-            console::Console* console_pointer;             // pointer to `Console`.
+            console::Console* console_pointer;     // pointer to `Console`.
 
             // Named entities are stored here so that they can be recalled, if needed.
-            std::unordered_map<std::string, datatypes::AnyValue*> entity_anyvalue_map;
+            std::unordered_map<std::string, ontology::Entity*> entity_map;
 
             GLclampf background_red;
             GLclampf background_green;
@@ -351,21 +554,23 @@ namespace ontology
 
             // Variables related to the window.
             GLFWwindow* window;
-            uint32_t window_width;
-            uint32_t window_height;
+            int32_t window_width;
+            int32_t window_height;
+            std::string window_title;
+            bool is_headless;
 
             // Variables related to the camera.
-            glm::mat4 ProjectionMatrix;
-            glm::mat4 ViewMatrix;
-            GLfloat aspect_ratio;
-            GLfloat initialFoV;
+            glm::mat4 current_camera_projection_matrix;
+            glm::mat4 current_camera_view_matrix;
+            GLfloat aspect_ratio; // at the moment all cameras use the same aspect ratio.
+            GLfloat initialFoV;   // at the moment all cameras use the same FoV.
 
             // Variables related to the fonts and texts used.
-            uint32_t text_size;
-            uint32_t font_size;
+            int32_t text_size;
+            int32_t font_size;
 
             // Variables related to timing of events.
-            uint32_t max_FPS;
+            int32_t max_FPS;
             float delta_time;
 
             double last_time_before_reading_keyboard;

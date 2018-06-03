@@ -1,5 +1,7 @@
 #include "texture_loader.hpp"
 #include "bmp_loader.hpp"
+#include "code/ylikuutio/string/ylikuutio_string.hpp"
+#include <ofbx.h>
 
 // Include GLEW
 #ifndef __GL_GLEW_H_INCLUDED
@@ -14,8 +16,10 @@
 #endif
 
 // Include standard headers
+#include <cmath>    // floor, NAN, sqrt, std::isnan, std::pow
+#include <cstddef>  // std::size_t
 #include <cstdio>   // std::FILE, std::fclose, std::fopen, std::fread, std::getchar, std::printf etc.
-#include <cstring>  // std::memcmp, std::strcmp, std::strlen, std::strncmp
+#include <cstring>  // std::memcmp, std::memcpy, std::strcmp, std::strlen, std::strncmp
 #include <iostream> // std::cout, std::cin, std::cerr
 #include <stdint.h> // uint32_t etc.
 #include <stdlib.h> // free, malloc
@@ -23,17 +27,9 @@
 
 namespace loaders
 {
-    GLuint load_BMP_texture(const std::string& filename)
+    // Load texture from memory.
+    GLuint load_texture(const uint8_t* const image_data, const int32_t image_width, const int32_t image_height, bool should_image_data_be_deleted)
     {
-        int32_t image_width;
-        int32_t image_height;
-        int32_t image_size;
-
-        uint32_t x_step = 1;
-        uint32_t z_step = 1;
-
-        uint8_t* image_data = load_BMP_file(filename, image_width, image_height, image_size);
-
         // Create one OpenGL texture
         GLuint textureID;
         glGenTextures(1, &textureID);
@@ -44,8 +40,11 @@ namespace loaders
         // Give the image to OpenGL
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image_width, image_height, 0, GL_BGR, GL_UNSIGNED_BYTE, image_data);
 
-        // OpenGL has now copied the data. Free our own version
-        delete[] image_data;
+        if (should_image_data_be_deleted)
+        {
+            // OpenGL has now copied the data. Free our own version
+            delete[] image_data;
+        }
 
         // Poor filtering, or ...
         //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -71,6 +70,74 @@ namespace loaders
 
         // Return the ID of the texture we just created
         return textureID;
+    }
+
+    // Load texture from memory.
+    GLuint load_FBX_texture(const ofbx::Texture* const ofbx_texture)
+    {
+        // Load the texture.
+        const uint8_t* texture_data_begin = static_cast<const uint8_t*>(ofbx_texture->getFileName().begin);
+        const uint8_t* texture_data_end = static_cast<const uint8_t*>(ofbx_texture->getFileName().end);
+
+        string::print_hexdump(texture_data_begin, texture_data_end);
+
+        // Find out the filename.
+        const int32_t filename_buffer_size = 1024;
+        uint8_t filename_buffer[filename_buffer_size];
+        const char separator = '/'; // FIXME: don't assume slash as some operating systems may use other characters.
+
+        int32_t filename_length = string::extract_last_part_of_string(
+                texture_data_begin,
+                texture_data_end - texture_data_begin,
+                filename_buffer,
+                filename_buffer_size,
+                separator);
+
+        std::cout << "Filename length: " << filename_length << " bytes.\n";
+
+        char* texture_filename = static_cast<char*>(static_cast<void*>(filename_buffer));
+        std::cout << "Texture file: " << texture_filename << "\n";
+
+        // Find out the file suffix (filetype).
+        const int32_t file_suffix_buffer_size = 16;
+        uint8_t file_suffix_buffer[file_suffix_buffer_size];
+        const char suffix_separator = '.';
+
+        string::extract_last_part_of_string(
+                filename_buffer,
+                filename_length,
+                file_suffix_buffer,
+                file_suffix_buffer_size,
+                suffix_separator);
+
+        char* texture_file_suffix = static_cast<char*>(static_cast<void*>(file_suffix_buffer));
+
+        std::cout << "Texture file suffix: " << texture_file_suffix << "\n";
+
+        if (strncmp(texture_file_suffix, "bmp", sizeof("bmp")) == 0)
+        {
+            std::string filename_string = std::string((char*) &filename_buffer);
+            return loaders::load_BMP_texture(filename_string);
+        }
+        else if (strncmp(texture_file_suffix, "bmp", sizeof("bmp")) == 0)
+        {
+            // TODO: implement PNG loading!
+        }
+        return 0;
+    }
+
+    GLuint load_BMP_texture(const std::string& filename)
+    {
+        int32_t image_width;
+        int32_t image_height;
+        std::size_t image_size;
+
+        uint32_t x_step = 1;
+        uint32_t z_step = 1;
+
+        uint8_t* image_data = load_BMP_file(filename, image_width, image_height, image_size);
+
+        return load_texture(image_data, image_width, image_height, true);
     }
 
     // Since GLFW 3, glfwLoadTexture2D() has been removed. You have to use another texture loading library,
@@ -149,14 +216,19 @@ namespace loaders
         uint32_t fourCC      = *(uint32_t*) &header[80];
 
         uint8_t* buffer;
-        uint32_t bufsize;
+        std::size_t bufsize;
         /* how big is it going to be including all mipmaps? */
-        bufsize = mipMapCount > 1 ? linearSize * 2 : linearSize;
+        bufsize = mipMapCount > 1 ? 2 * static_cast<std::size_t>(linearSize) : linearSize;
         buffer = (uint8_t*) malloc(bufsize * sizeof(uint8_t));
 
-        // TODO: add check for file reading!
-        // TODO: store hardcoded value 4 into a variable.
-        std::fread(buffer, 1, bufsize, fp);
+        if (std::fread(buffer, 1, bufsize, fp) != bufsize)
+        {
+            std::cerr << "Error while reading " << filename << "\n";
+            free(buffer);
+            std::fclose(fp);
+            return 0;
+        }
+
         /* close the file pointer */
         std::fclose(fp);
 

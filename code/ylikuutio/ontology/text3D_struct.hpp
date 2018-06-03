@@ -19,16 +19,20 @@ namespace ontology
 typedef struct Text3DStruct
 {
     Text3DStruct()
-        : parent_pointer(nullptr), text_string_char(nullptr), original_scale_vector(glm::vec3(1.0f, 1.0f, 1.0f)), rotate_angle(NAN)
+        : parent(nullptr),
+        text_string_char(nullptr),
+        original_scale_vector(glm::vec3(1.0f, 1.0f, 1.0f)),
+        rotate_angle(NAN),
+        cartesian_coordinates(glm::vec3(NAN, NAN, NAN))
     {
         // constructor.
     }
-    ontology::VectorFont* parent_pointer; // pointer to the parent `VectorFont`.
+    ontology::VectorFont* parent; // pointer to the parent `VectorFont`.
     std::string text_string;
     const char* text_string_char;
     glm::vec3 original_scale_vector;      // original scale vector.
     float rotate_angle;                   // rotate angle.
-    glm::vec3 coordinate_vector;          // coordinate vector.
+    glm::vec3 cartesian_coordinates;      // coordinate vector.
     glm::vec3 rotate_vector;              // rotate vector.
     glm::vec3 translate_vector;           // translate vector.
 } Text3DStruct;

@@ -9,25 +9,8 @@ namespace space_partition
 {
     void ChunkMaster::bind_to_parent()
     {
-        hierarchy::bind_child_to_parent<space_partition::ChunkMaster*>(
-                this,
-                this->parent_pointer->chunk_master_pointer_vector,
-                this->parent_pointer->free_chunk_masterID_queue,
-                &this->parent_pointer->number_of_chunk_masters);
-    }
-
-    ChunkMaster::ChunkMaster(ontology::Material* const parent_pointer, GetContentCallback get_content_callback)
-    {
-        // constructor.
-        this->get_content_callback = get_content_callback;
-        this->number_of_chunks = 0;
-
-        this->parent_pointer = parent_pointer;
-
         // get `childID` from `Material` and set pointer to this `ChunkMaster`.
-        this->bind_to_parent();
-
-        this->type = "space_partition::ChunkMaster*";
+        this->parent->bind_chunk_master(this);
     }
 
     ChunkMaster::~ChunkMaster()
@@ -39,7 +22,7 @@ namespace space_partition
         hierarchy::delete_children<space_partition::Chunk*>(this->chunk_pointer_vector, &this->number_of_chunks);
 
         // set pointer to this `ChunkMaster` to nullptr.
-        this->parent_pointer->set_chunk_master_pointer(this->childID, nullptr);
+        this->parent->set_chunk_master_pointer(this->childID, nullptr);
     }
 
     void ChunkMaster::set_chunk_pointer(int32_t childID, space_partition::Chunk* child_pointer)

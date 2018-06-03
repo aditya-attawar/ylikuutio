@@ -34,8 +34,7 @@ namespace loaders
             GLuint* uvbuffer,
             GLuint* normalbuffer,
             GLuint* elementbuffer,
-            int32_t& image_width,
-            int32_t& image_height);
+            const bool is_debug_mode);
 }
 
 #endif

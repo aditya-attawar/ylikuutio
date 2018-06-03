@@ -84,6 +84,7 @@ TEST(glyphs_must_be_found_appropriately, kongtext_svg)
     ASSERT_TRUE(is_tenth_glyph_found);
     ASSERT_EQ(SVG_data_pointer, SVG_base_pointer + 0x5d6);
 }
+
 TEST(font_must_be_loaded_appropriately, kongtext_svg)
 {
     std::string font_filename = "kongtext.svg";
@@ -92,11 +93,14 @@ TEST(font_must_be_loaded_appropriately, kongtext_svg)
     std::vector<std::string> glyph_names;
     std::vector<std::string> unicode_strings;
 
+    const bool is_debug_mode = false; // Travis fails for too much output.
+
     bool font_loading_result = loaders::load_SVG_font(
             font_filename,
             glyph_vertex_data,
             glyph_names,
-            unicode_strings);
+            unicode_strings,
+            is_debug_mode);
 
     ASSERT_EQ(glyph_names.size(), 217);
     ASSERT_EQ(glyph_vertex_data.size(), 217);

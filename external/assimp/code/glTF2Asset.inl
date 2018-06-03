@@ -2,7 +2,8 @@
 Open Asset Import Library (assimp)
 ----------------------------------------------------------------------
 
-Copyright (c) 2006-2017, assimp team
+Copyright (c) 2006-2018, assimp team
+
 
 All rights reserved.
 
@@ -39,7 +40,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ----------------------------------------------------------------------
 */
 
-#include "StringUtils.h"
+#include <assimp/StringUtils.h>
 
 // Header files, Assimp
 #include <assimp/DefaultLogger.hpp>
@@ -194,6 +195,50 @@ inline void LazyDict<T>::DetachFromDocument()
 }
 
 template<class T>
+unsigned int LazyDict<T>::Remove(const char* id)
+{
+    id = T::TranslateId(mAsset, id);
+
+    typename IdDict::iterator it = mObjsById.find(id);
+
+    if (it == mObjsById.end()) {
+        throw DeadlyExportError("GLTF: Object with id \"" + std::string(id) + "\" is not found");
+    }
+
+    const unsigned int index = it->second;
+
+    mAsset.mUsedIds[id] = false;
+    mObjsById.erase(id);
+    mObjsByOIndex.erase(index);
+    mObjs.erase(mObjs.begin() + index);
+
+    //update index of object in mObjs;
+    for (unsigned int i = index; i < mObjs.size(); ++i) {
+        T *obj = mObjs[i];
+
+        obj->index = i;
+    }
+
+    for (IdDict::iterator it = mObjsById.begin(); it != mObjsById.end(); ++it) {
+        if (it->second <= index) {
+            continue;
+        }
+
+        mObjsById[it->first] = it->second - 1;
+    }
+
+    for (Dict::iterator it = mObjsByOIndex.begin(); it != mObjsByOIndex.end(); ++it) {
+        if (it->second <= index) {
+            continue;
+        }
+
+        mObjsByOIndex[it->first] = it->second - 1;
+    }
+
+    return index;
+}
+
+template<class T>
 Ref<T> LazyDict<T>::Retrieve(unsigned int i)
 {
 
@@ -214,11 +259,11 @@ Ref<T> LazyDict<T>::Retrieve(unsigned int i)
     Value &obj = (*mDict)[i];
 
     if (!obj.IsObject()) {
-        throw DeadlyImportError("GLTF: Object at index \"" + std::to_string(i) + "\" is not a JSON object");
+        throw DeadlyImportError("GLTF: Object at index \"" + to_string(i) + "\" is not a JSON object");
     }
 
     T* inst = new T();
-    inst->id = std::string(mDictId) + "_" + std::to_string(i);
+    inst->id = std::string(mDictId) + "_" + to_string(i);
     inst->oIndex = i;
     ReadMember(obj, "name", inst->name);
     inst->Read(obj, mAsset);
@@ -288,7 +333,7 @@ inline Buffer::~Buffer()
 	for(SEncodedRegion* reg : EncodedRegion_List) delete reg;
 }
 
-inline const char* Buffer::TranslateId(Asset& r, const char* id)
+inline const char* Buffer::TranslateId(Asset& /*r*/, const char* id)
 {
     return id;
 }
@@ -313,7 +358,7 @@ inline void Buffer::Read(Value& obj, Asset& r)
         if (dataURI.base64) {
             uint8_t* data = 0;
             this->byteLength = Util::DecodeBase64(dataURI.data, dataURI.dataLength, data);
-            this->mData.reset(data);
+            this->mData.reset(data, std::default_delete<uint8_t[]>());
 
             if (statedLength > 0 && this->byteLength != statedLength) {
                 throw DeadlyImportError("GLTF: buffer \"" + id + "\", expected " + to_string(statedLength) +
@@ -326,7 +371,7 @@ inline void Buffer::Read(Value& obj, Asset& r)
                                         " bytes, but found " + to_string(dataURI.dataLength));
             }
 
-            this->mData.reset(new uint8_t[dataURI.dataLength]);
+            this->mData.reset(new uint8_t[dataURI.dataLength], std::default_delete<uint8_t[]>());
             memcpy( this->mData.get(), dataURI.data, dataURI.dataLength );
         }
     }
@@ -357,7 +402,7 @@ inline bool Buffer::LoadFromStream(IOStream& stream, size_t length, size_t baseO
         stream.Seek(baseOffset, aiOrigin_SET);
     }
 
-    mData.reset(new uint8_t[byteLength]);
+    mData.reset(new uint8_t[byteLength], std::default_delete<uint8_t[]>());
 
     if (stream.Read(mData.get(), byteLength, 1) != 1) {
         return false;
@@ -416,23 +461,48 @@ inline void Buffer::EncodedRegion_SetCurrent(const std::string& pID)
 	throw DeadlyImportError("GLTF: EncodedRegion with ID: \"" + pID + "\" not found.");
 }
 
-inline bool Buffer::ReplaceData(const size_t pBufferData_Offset, const size_t pBufferData_Count, const uint8_t* pReplace_Data, const size_t pReplace_Count)
+inline 
+bool Buffer::ReplaceData(const size_t pBufferData_Offset, const size_t pBufferData_Count, const uint8_t* pReplace_Data, const size_t pReplace_Count)
 {
-const size_t new_data_size = byteLength + pReplace_Count - pBufferData_Count;
 
-uint8_t* new_data;
+	if((pBufferData_Count == 0) || (pReplace_Count == 0) || (pReplace_Data == nullptr)) {
+		return false;
+	}
 
-	if((pBufferData_Count == 0) || (pReplace_Count == 0) || (pReplace_Data == nullptr)) return false;
+        const size_t new_data_size = byteLength + pReplace_Count - pBufferData_Count;
+	uint8_t *new_data = new uint8_t[new_data_size];
+	// Copy data which place before replacing part.
+	::memcpy(new_data, mData.get(), pBufferData_Offset);
+	// Copy new data.
+	::memcpy(&new_data[pBufferData_Offset], pReplace_Data, pReplace_Count);
+	// Copy data which place after replacing part.
+	::memcpy(&new_data[pBufferData_Offset + pReplace_Count], &mData.get()[pBufferData_Offset + pBufferData_Count], pBufferData_Offset);
+	// Apply new data
+	mData.reset(new_data, std::default_delete<uint8_t[]>());
+	byteLength = new_data_size;
 
-	new_data = new uint8_t[new_data_size];
+	return true;
+}
+	
+inline 
+bool Buffer::ReplaceData_joint(const size_t pBufferData_Offset, const size_t pBufferData_Count, const uint8_t* pReplace_Data, const size_t pReplace_Count)
+{
+	if((pBufferData_Count == 0) || (pReplace_Count == 0) || (pReplace_Data == nullptr)) {
+		return false;
+	}
+
+	const size_t new_data_size = byteLength + pReplace_Count - pBufferData_Count;
+	uint8_t* new_data = new uint8_t[new_data_size];
 	// Copy data which place before replacing part.
 	memcpy(new_data, mData.get(), pBufferData_Offset);
 	// Copy new data.
 	memcpy(&new_data[pBufferData_Offset], pReplace_Data, pReplace_Count);
 	// Copy data which place after replacing part.
-	memcpy(&new_data[pBufferData_Offset + pReplace_Count], &mData.get()[pBufferData_Offset + pBufferData_Count], pBufferData_Offset);
+    memcpy(&new_data[pBufferData_Offset + pReplace_Count], &mData.get()[pBufferData_Offset + pBufferData_Count]
+            , new_data_size - (pBufferData_Offset + pReplace_Count)
+          );
 	// Apply new data
-	mData.reset(new_data);
+	mData.reset(new_data, std::default_delete<uint8_t[]>());
 	byteLength = new_data_size;
 
 	return true;
@@ -441,7 +511,8 @@ uint8_t* new_data;
 inline size_t Buffer::AppendData(uint8_t* data, size_t length)
 {
     size_t offset = this->byteLength;
-    Grow(length);
+    // Force alignment to 4 bits
+    Grow((length + 3) & ~3);
     memcpy(mData.get() + offset, data, length);
     return offset;
 }
@@ -451,7 +522,7 @@ inline void Buffer::Grow(size_t amount)
     if (amount <= 0) return;
     uint8_t* b = new uint8_t[byteLength + amount];
     if (mData) memcpy(b, mData.get(), byteLength);
-    mData.reset(b);
+    mData.reset(b, std::default_delete<uint8_t[]>());
     byteLength += amount;
 }
 
@@ -468,6 +539,7 @@ inline void BufferView::Read(Value& obj, Asset& r)
 
     byteOffset = MemberOrDefault(obj, "byteOffset", 0u);
     byteLength = MemberOrDefault(obj, "byteLength", 0u);
+    byteStride = MemberOrDefault(obj, "byteStride", 0u);
 }
 
 //
@@ -482,7 +554,6 @@ inline void Accessor::Read(Value& obj, Asset& r)
     }
 
     byteOffset = MemberOrDefault(obj, "byteOffset", 0u);
-    byteStride = MemberOrDefault(obj, "byteStride", 0u);
     componentType = MemberOrDefault(obj, "componentType", ComponentType_BYTE);
     count = MemberOrDefault(obj, "count", 0u);
 
@@ -557,7 +628,7 @@ bool Accessor::ExtractData(T*& outData)
     const size_t elemSize = GetElementSize();
     const size_t totalSize = elemSize * count;
 
-    const size_t stride = byteStride ? byteStride : elemSize;
+    const size_t stride = bufferView && bufferView->byteStride ? bufferView->byteStride : elemSize;
 
     const size_t targetElemSize = sizeof(T);
     ai_assert(elemSize <= targetElemSize);
@@ -597,7 +668,7 @@ inline Accessor::Indexer::Indexer(Accessor& acc)
     : accessor(acc)
     , data(acc.GetPointer())
     , elemSize(acc.GetElementSize())
-    , stride(acc.byteStride ? acc.byteStride : elemSize)
+    , stride(acc.bufferView && acc.bufferView->byteStride ? acc.bufferView->byteStride : elemSize)
 {
 
 }
@@ -640,6 +711,19 @@ inline void Image::Read(Value& obj, Asset& r)
                 this->uri = uristr;
             }
         }
+        else if (Value* bufferViewVal = FindUInt(obj, "bufferView")) {
+            this->bufferView = r.bufferViews.Retrieve(bufferViewVal->GetUint());
+            Ref<Buffer> buffer = this->bufferView->buffer;
+
+            this->mDataLength = this->bufferView->byteLength;
+            // maybe this memcpy could be avoided if aiTexture does not delete[] pcData at destruction.
+            this->mData = new uint8_t [this->mDataLength];
+            memcpy(this->mData, buffer->GetPointer() + this->bufferView->byteOffset, this->mDataLength);
+
+            if (Value* mtype = FindString(obj, "mimeType")) {
+                this->mimeType = mtype->GetString();
+            }
+        }
     }
 }
 
@@ -668,7 +752,7 @@ inline void Image::SetData(uint8_t* data, size_t length, Asset& r)
     }
 }
 
-inline void Sampler::Read(Value& obj, Asset& r)
+inline void Sampler::Read(Value& obj, Asset& /*r*/)
 {
     SetDefaults();
 
@@ -724,7 +808,7 @@ namespace {
             SetTextureProperties(r, prop, out);
 
             if (Value* scale = FindNumber(*prop, "scale")) {
-                out.scale = scale->GetDouble();
+                out.scale = static_cast<float>(scale->GetDouble());
             }
         }
     }
@@ -735,7 +819,7 @@ namespace {
             SetTextureProperties(r, prop, out);
 
             if (Value* strength = FindNumber(*prop, "strength")) {
-                out.strength = strength->GetDouble();
+                out.strength = static_cast<float>(strength->GetDouble());
             }
         }
     }
@@ -776,6 +860,8 @@ inline void Material::Read(Value& material, Asset& r)
                 this->pbrSpecularGlossiness = Nullable<PbrSpecularGlossiness>(pbrSG);
             }
         }
+
+        unlit = nullptr != FindObject(*extensions, "KHR_materials_unlit");
     }
 }
 
@@ -798,6 +884,7 @@ inline void Material::SetDefaults()
     alphaMode = "OPAQUE";
     alphaCutoff = 0.5;
     doubleSided = false;
+    unlit = false;
 }
 
 inline void PbrSpecularGlossiness::SetDefaults()
@@ -822,6 +909,9 @@ namespace {
         }
         else if ((pos = Compare(attr, "NORMAL"))) {
             v = &(p.attributes.normal);
+        }
+        else if ((pos = Compare(attr, "TANGENT"))) {
+            v = &(p.attributes.tangent);
         }
         else if ((pos = Compare(attr, "TEXCOORD"))) {
             v = &(p.attributes.texcoord);
@@ -862,7 +952,7 @@ inline void Mesh::Read(Value& pJSON_Object, Asset& pAsset_Root)
                 for (Value::MemberIterator it = attrs->MemberBegin(); it != attrs->MemberEnd(); ++it) {
                     if (!it->value.IsUint()) continue;
                     const char* attr = it->name.GetString();
-                    // Valid attribute semantics include POSITION, NORMAL, TEXCOORD, COLOR, JOINT, JOINTMATRIX,
+                    // Valid attribute semantics include POSITION, NORMAL, TANGENT, TEXCOORD, COLOR, JOINT, JOINTMATRIX,
                     // and WEIGHT.Attribute semantics can be of the form[semantic]_[set_index], e.g., TEXCOORD_0, TEXCOORD_1, etc.
 
                     int undPos = 0;
@@ -886,11 +976,11 @@ inline void Mesh::Read(Value& pJSON_Object, Asset& pAsset_Root)
     }
 }
 
-inline void Camera::Read(Value& obj, Asset& r)
+inline void Camera::Read(Value& obj, Asset& /*r*/)
 {
     type = MemberOrDefault(obj, "type", Camera::Perspective);
 
-    const char* subobjId = (type == Camera::Orthographic) ? "ortographic" : "perspective";
+    const char* subobjId = (type == Camera::Orthographic) ? "orthographic" : "perspective";
 
     Value* it = FindObject(obj, subobjId);
     if (!it) throw DeadlyImportError("GLTF: Camera missing its parameters");
@@ -993,7 +1083,72 @@ inline void AssetMetadata::Read(Document& doc)
 // Asset methods implementation
 //
 
-inline void Asset::Load(const std::string& pFile)
+inline void Asset::ReadBinaryHeader(IOStream& stream, std::vector<char>& sceneData)
+{
+    GLB_Header header;
+    if (stream.Read(&header, sizeof(header), 1) != 1) {
+        throw DeadlyImportError("GLTF: Unable to read the file header");
+    }
+
+    if (strncmp((char*)header.magic, AI_GLB_MAGIC_NUMBER, sizeof(header.magic)) != 0) {
+        throw DeadlyImportError("GLTF: Invalid binary glTF file");
+    }
+
+    AI_SWAP4(header.version);
+    asset.version = to_string(header.version);
+    if (header.version != 2) {
+        throw DeadlyImportError("GLTF: Unsupported binary glTF version");
+    }
+
+    GLB_Chunk chunk;
+    if (stream.Read(&chunk, sizeof(chunk), 1) != 1) {
+        throw DeadlyImportError("GLTF: Unable to read JSON chunk");
+    }
+
+    AI_SWAP4(chunk.chunkLength);
+    AI_SWAP4(chunk.chunkType);
+
+    if (chunk.chunkType != ChunkType_JSON) {
+        throw DeadlyImportError("GLTF: JSON chunk missing");
+    }
+
+    // read the scene data
+
+    mSceneLength = chunk.chunkLength;
+    sceneData.resize(mSceneLength + 1);
+    sceneData[mSceneLength] = '\0';
+
+    if (stream.Read(&sceneData[0], 1, mSceneLength) != mSceneLength) {
+        throw DeadlyImportError("GLTF: Could not read the file contents");
+    }
+
+    uint32_t padding = ((chunk.chunkLength + 3) & ~3) - chunk.chunkLength;
+    if (padding > 0) {
+        stream.Seek(padding, aiOrigin_CUR);
+    }
+
+    AI_SWAP4(header.length);
+    mBodyOffset = 12 + 8 + chunk.chunkLength + padding + 8;
+    if (header.length >= mBodyOffset) {
+        if (stream.Read(&chunk, sizeof(chunk), 1) != 1) {
+            throw DeadlyImportError("GLTF: Unable to read BIN chunk");
+        }
+
+        AI_SWAP4(chunk.chunkLength);
+        AI_SWAP4(chunk.chunkType);
+
+        if (chunk.chunkType != ChunkType_BIN) {
+            throw DeadlyImportError("GLTF: BIN chunk missing");
+        }
+
+        mBodyLength = chunk.chunkLength;
+    }
+    else {
+        mBodyOffset = mBodyLength = 0;
+    }
+}
+
+inline void Asset::Load(const std::string& pFile, bool isBinary)
 {
     mCurrentAssetDir.clear();
     int pos = std::max(int(pFile.rfind('/')), int(pFile.rfind('\\')));
@@ -1004,16 +1159,25 @@ inline void Asset::Load(const std::string& pFile)
         throw DeadlyImportError("GLTF: Could not open file for reading");
     }
 
-    mSceneLength = stream->FileSize();
-    mBodyLength = 0;
+    // is binary? then read the header
+    std::vector<char> sceneData;
+    if (isBinary) {
+        SetAsBinary(); // also creates the body buffer
+        ReadBinaryHeader(*stream, sceneData);
+    }
+    else {
+        mSceneLength = stream->FileSize();
+        mBodyLength = 0;
 
-    // read the scene data
 
-    std::vector<char> sceneData(mSceneLength + 1);
-    sceneData[mSceneLength] = '\0';
+        // read the scene data
 
-    if (stream->Read(&sceneData[0], 1, mSceneLength) != mSceneLength) {
-        throw DeadlyImportError("GLTF: Could not read the file contents");
+        sceneData.resize(mSceneLength + 1);
+        sceneData[mSceneLength] = '\0';
+
+        if (stream->Read(&sceneData[0], 1, mSceneLength) != mSceneLength) {
+            throw DeadlyImportError("GLTF: Could not read the file contents");
+        }
     }
 
 
@@ -1052,12 +1216,15 @@ inline void Asset::Load(const std::string& pFile)
 
     // Read the "scene" property, which specifies which scene to load
     // and recursively load everything referenced by it
+    unsigned int sceneIndex = 0;
     if (Value* scene = FindUInt(doc, "scene")) {
-        unsigned int sceneIndex = scene->GetUint();
+        sceneIndex = scene->GetUint();
+    }
 
-        Ref<Scene> s = scenes.Retrieve(sceneIndex);
-
-        this->scene = s;
+    if (Value* scenesArray = FindArray(doc, "scenes")) {
+        if (sceneIndex < scenesArray->Size()) {
+            this->scene = scenes.Retrieve(sceneIndex);
+        }
     }
 
     // Clean up
@@ -1065,6 +1232,15 @@ inline void Asset::Load(const std::string& pFile)
         mDicts[i]->DetachFromDocument();
     }
 }
+
+inline void Asset::SetAsBinary()
+{
+    if (!mBodyBuffer) {
+        mBodyBuffer = buffers.Create("binary_glTF");
+        mBodyBuffer->MarkAsSpecial();
+    }
+}
+
 
 inline void Asset::ReadExtensionsUsed(Document& doc)
 {
@@ -1083,11 +1259,12 @@ inline void Asset::ReadExtensionsUsed(Document& doc)
         if (exts.find(#EXT) != exts.end()) extensionsUsed.EXT = true;
 
     CHECK_EXT(KHR_materials_pbrSpecularGlossiness);
+    CHECK_EXT(KHR_materials_unlit);
 
     #undef CHECK_EXT
 }
 
-inline IOStream* Asset::OpenFile(std::string path, const char* mode, bool absolute)
+inline IOStream* Asset::OpenFile(std::string path, const char* mode, bool /*absolute*/)
 {
     #ifdef ASSIMP_API
         return mIOSystem->Open(path, mode);
@@ -1118,11 +1295,12 @@ inline std::string Asset::FindUniqueID(const std::string& str, const char* suffi
     if (it == mUsedIds.end())
         return id;
 
-    char buffer[256];
-    int offset = ai_snprintf(buffer, sizeof(buffer), "%s_", id.c_str());
+    std::vector<char> buffer;
+    buffer.resize(id.size() + 16);
+    int offset = ai_snprintf(buffer.data(), buffer.size(), "%s_", id.c_str());
     for (int i = 0; it != mUsedIds.end(); ++i) {
-        ai_snprintf(buffer + offset, sizeof(buffer) - offset, "%d", i);
-        id = buffer;
+        ai_snprintf(buffer.data() + offset, buffer.size() - offset, "%d", i);
+        id = buffer.data();
         it = mUsedIds.find(id);
     }
 

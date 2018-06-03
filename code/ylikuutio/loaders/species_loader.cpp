@@ -1,9 +1,11 @@
 #include "species_loader.hpp"
 #include "species_loader_struct.hpp"
 #include "obj_loader.hpp"
+#include "fbx_species_loader.hpp"
 #include "ascii_grid_loader.hpp"
 #include "bmp_heightmap_loader.hpp"
 #include "srtm_heightmap_loader.hpp"
+#include "code/ylikuutio/ontology/vboindexer.hpp"
 
 // Include GLEW
 #ifndef __GL_GLEW_H_INCLUDED
@@ -23,19 +25,6 @@
 #include <string>   // std::string
 #include <vector>   // std::vector
 
-namespace ontology
-{
-    void indexVBO(
-            std::vector<glm::vec3>& in_vertices,
-            std::vector<glm::vec2>& in_uvs,
-            std::vector<glm::vec3>& in_normals,
-            std::vector<GLuint>& out_indices,
-            std::vector<glm::vec3>& out_vertices,
-            std::vector<glm::vec2>& out_uvs,
-            std::vector<glm::vec3>& out_normals
-            );
-}
-
 namespace loaders
 {
     bool load_species(
@@ -51,8 +40,7 @@ namespace loaders
             GLuint* uvbuffer,
             GLuint* normalbuffer,
             GLuint* elementbuffer,
-            int32_t& image_width,
-            int32_t& image_height)
+            const bool is_debug_mode)
     {
         bool model_loading_result = false;
 
@@ -64,16 +52,23 @@ namespace loaders
                     out_UVs,
                     out_normals);
         }
+        else if (species_loader_struct.model_file_format.compare("fbx") == 0 || species_loader_struct.model_file_format.compare("FBX") == 0)
+        {
+            model_loading_result = loaders::load_FBX(
+                    species_loader_struct.model_filename,
+                    species_loader_struct.mesh_i,
+                    out_vertices,
+                    out_UVs,
+                    out_normals,
+                    is_debug_mode);
+        }
         else if (species_loader_struct.model_file_format.compare("srtm") == 0 || species_loader_struct.model_file_format.compare("SRTM") == 0)
         {
-            species_loader_struct.latitude = -16.50f; // in degrees.
-            species_loader_struct.longitude = -68.15f; // in degrees.
-
-            model_loading_result = loaders::load_SRTM_world(
+            model_loading_result = loaders::load_SRTM_terrain(
                     species_loader_struct.model_filename,
                     species_loader_struct.latitude,
                     species_loader_struct.longitude,
-                    species_loader_struct.world_radius,
+                    species_loader_struct.planet_radius,
                     species_loader_struct.divisor,
                     out_vertices,
                     out_UVs,
@@ -84,13 +79,13 @@ namespace loaders
         }
         else if (species_loader_struct.model_file_format.compare("bmp") == 0 || species_loader_struct.model_file_format.compare("BMP") == 0)
         {
-            model_loading_result = loaders::load_BMP_world(
+            model_loading_result = loaders::load_BMP_terrain(
                     species_loader_struct.model_filename,
                     out_vertices,
                     out_UVs,
                     out_normals,
-                    image_width,
-                    image_height,
+                    species_loader_struct.image_width_pointer,
+                    species_loader_struct.image_height_pointer,
                     species_loader_struct.color_channel,
                     species_loader_struct.x_step,
                     species_loader_struct.z_step,

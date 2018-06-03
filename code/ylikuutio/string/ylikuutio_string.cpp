@@ -2,7 +2,8 @@
 
 // Include standard headers
 #include <cstdio>   // std::FILE, std::fclose, std::fopen, std::fread, std::getchar, std::printf etc.
-#include <cstring>  // std::memcmp, std::strcmp, std::strlen, std::strncmp
+#include <cstring>  // std::memcmp, std::memcpy, std::strcmp, std::strlen, std::strncmp
+#include <iomanip>  // std::setfill, std::setw
 #include <iostream> // std::cout, std::cin, std::cerr
 #include <list>     // std::list
 #include <stdint.h> // uint32_t etc.
@@ -18,7 +19,7 @@ namespace string
             const uint64_t data_size,
             const std::vector<std::string> identifier_strings_vector)
     {
-        for (std::string identifier_string : identifier_strings_vector)
+        for (const std::string identifier_string : identifier_strings_vector)
         {
             const char* const identifier_string_char = identifier_string.c_str();
 
@@ -31,7 +32,6 @@ namespace string
 
             if (std::strncmp(data_pointer, identifier_string_char, std::strlen(identifier_string_char)) == 0)
             {
-                const char* const identifier_string_char = identifier_string.c_str();
                 return true;
             }
         }
@@ -93,6 +93,34 @@ namespace string
         return;
     }
 
+    int32_t extract_last_part_of_string(
+            const uint8_t* const src_base_pointer,
+            const uint64_t src_data_size,
+            uint8_t* const dest_base_pointer,
+            const uint64_t dest_data_size,
+            const char separator)
+    {
+        uint8_t* src_data_pointer = const_cast<uint8_t*>(src_base_pointer);
+        uint8_t* dest_data_pointer = dest_base_pointer;
+        int32_t filename_length = 0; // length without trailing 0 byte.
+
+        while (src_data_pointer < src_base_pointer + src_data_size &&
+                dest_data_pointer + 1 < dest_base_pointer + dest_data_size)
+        {
+            if (*src_data_pointer == static_cast<uint8_t>(separator))
+            {
+                dest_data_pointer = dest_base_pointer;
+                src_data_pointer++;
+                filename_length = 0;
+                continue;
+            }
+            std::memcpy(dest_data_pointer++, src_data_pointer++, 1);
+            filename_length++;
+        }
+        *dest_data_pointer = '\0';
+        return filename_length;
+    }
+
     int32_t extract_int32_t_value_from_string(
             const char* const src_base_pointer,
             char*& src_data_pointer,
@@ -110,7 +138,7 @@ namespace string
                 sizeof(char_number_buffer),
                 char_end_string);
 
-        uint32_t value = std::atoi(char_number_buffer);
+        uint32_t value = std::strtoul(char_number_buffer, nullptr, 10); // base 10.
 
         if (description != nullptr)
         {
@@ -136,7 +164,7 @@ namespace string
                 sizeof(char_number_buffer),
                 char_end_string);
 
-        float value = std::atof(char_number_buffer);
+        float value = std::strtof(char_number_buffer, nullptr);
 
         if (description != nullptr)
         {
@@ -239,8 +267,50 @@ namespace string
         return my_string;
     }
 
+    std::vector<std::string> convert_std_list_char_to_std_vector_std_string(
+            const std::list<char>& std_list_char,
+            const uint32_t line_length)
+    {
+        std::vector<std::string> my_vector;
+        std::string my_string;
+        uint32_t remaining_characters_on_this_line = line_length;
+
+        for (std::list<char>::const_iterator it = std_list_char.begin(); it != std_list_char.end(); it++)
+        {
+            if (remaining_characters_on_this_line == 0)
+            {
+                my_vector.push_back(my_string);
+                my_string.clear();
+                remaining_characters_on_this_line = line_length;
+            }
+            my_string.push_back(*it);
+            remaining_characters_on_this_line--;
+        }
+
+        if (my_string.size() > 0)
+        {
+            my_vector.push_back(my_string);
+        }
+
+        return my_vector;
+    }
+
     bool check_if_float_string(const std::string& my_string)
     {
+        int32_t maximum_safe_length_for_float_string = 38;
+        return check_if_floating_point_string(my_string, maximum_safe_length_for_float_string);
+    }
+
+    bool check_if_double_string(const std::string& my_string)
+    {
+        int32_t maximum_safe_length_for_double_string = 308;
+        return check_if_floating_point_string(my_string, maximum_safe_length_for_double_string);
+    }
+
+    bool check_if_floating_point_string(const std::string& my_string, int32_t safe_number_of_chars)
+    {
+        int32_t n_chars = 0;
+
         if (my_string.empty())
         {
             return false;
@@ -278,11 +348,21 @@ namespace string
 
                 // OK, decimal point here.
                 is_dot_found = true;
+                continue;
             }
 
-            else if (my_string.at(i) < '0' || my_string.at(i) > '9')
+            if (my_string.at(i) < '0' || my_string.at(i) > '9')
             {
                 return false;
+            }
+
+            if (!is_dot_found)
+            {
+                if (++n_chars > safe_number_of_chars)
+                {
+                    // Too many characters, maximum safe number is 38 characters for float, 308 for double.
+                    return false;
+                }
             }
         }
 
@@ -334,5 +414,44 @@ namespace string
         }
 
         return true;
+    }
+
+    void print_hexdump(const void* const start_address, const void* const end_address) // `begin` is inclusive, `end is exclusive.
+    {
+        void* void_start_address = const_cast<void*>(start_address);
+        const int32_t line_width_in_bytes = 16;
+        int32_t characters_on_this_line = 0;
+        std::string current_line_ascii = "";
+        std::string current_line_hex = "";
+
+        for (uint8_t* data_pointer = static_cast<uint8_t*>(void_start_address); data_pointer < end_address; data_pointer++)
+        {
+            const uint8_t data_byte = static_cast<uint8_t>(*data_pointer);
+            const char data_char = (data_byte >= 0x20 && data_byte <= 0x7f ? static_cast<char>(data_byte) : '.');
+            current_line_ascii += data_char;
+
+            uint32_t data_32_bit = static_cast<uint32_t>(data_byte); // to get the hexadecimal representation instead of the actual value.
+            std::stringstream my_stream;
+            my_stream << std::setfill('0') << std::setw(2) << std::hex << data_32_bit << std::dec; // std::hex does not work on char values.
+            current_line_hex += my_stream.str();
+            current_line_hex += " ";
+
+            if (++characters_on_this_line >= line_width_in_bytes)
+            {
+                std::cout << current_line_hex << " " << current_line_ascii << "\n";
+                current_line_hex = "";
+                current_line_ascii = "";
+                characters_on_this_line = 0;
+            }
+        }
+
+        if (characters_on_this_line > 0)
+        {
+            const int32_t size_of_each_bytes_hexdump = 3; // each byte's hexdump takes 3 characters.
+            const int32_t number_of_spaces_needed = (line_width_in_bytes - characters_on_this_line) * size_of_each_bytes_hexdump + 1;
+            std::cout << current_line_hex << std::string(number_of_spaces_needed, ' ') << current_line_ascii << "\n";
+        }
+
+        std::cout << "\n";
     }
 }

@@ -2,7 +2,8 @@
 Open Asset Import Library (assimp)
 ----------------------------------------------------------------------
 
-Copyright (c) 2006-2017, assimp team
+Copyright (c) 2006-2018, assimp team
+
 
 All rights reserved.
 
@@ -41,7 +42,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <utility>
 #include "MMDPmxParser.h"
 #include "../contrib/utf8cpp/source/utf8.h"
-#include "Exceptional.h"
+#include <assimp/Exceptional.h>
 
 namespace pmx
 {
@@ -216,8 +217,8 @@ namespace pmx
 
 	void PmxMaterial::Read(std::istream *stream, PmxSetting *setting)
 	{
-		this->material_name = std::move(ReadString(stream, setting->encoding));
-		this->material_english_name = std::move(ReadString(stream, setting->encoding));
+		this->material_name = ReadString(stream, setting->encoding);
+		this->material_english_name = ReadString(stream, setting->encoding);
 		stream->read((char*) this->diffuse, sizeof(float) * 4);
 		stream->read((char*) this->specular, sizeof(float) * 3);
 		stream->read((char*) &this->specularlity, sizeof(float));
@@ -236,7 +237,7 @@ namespace pmx
 		else {
 			this->toon_texture_index = ReadIndex(stream, setting->texture_index_size);
 		}
-		this->memo = std::move(ReadString(stream, setting->encoding));
+		this->memo = ReadString(stream, setting->encoding);
 		stream->read((char*) &this->index_count, sizeof(int));
 	}
 
@@ -253,8 +254,8 @@ namespace pmx
 
 	void PmxBone::Read(std::istream *stream, PmxSetting *setting)
 	{
-		this->bone_name = std::move(ReadString(stream, setting->encoding));
-		this->bone_english_name = std::move(ReadString(stream, setting->encoding));
+		this->bone_name = ReadString(stream, setting->encoding);
+		this->bone_english_name = ReadString(stream, setting->encoding);
 		stream->read((char*) this->position, sizeof(float) * 3);
 		this->parent_index = ReadIndex(stream, setting->bone_index_size);
 		stream->read((char*) &this->level, sizeof(int));
@@ -471,7 +472,7 @@ namespace pmx
 		stream->read((char*) &this->is_near, sizeof(uint8_t));
 	}
 
-	void PmxSoftBody::Read(std::istream *stream, PmxSetting *setting)
+    void PmxSoftBody::Read(std::istream * /*stream*/, PmxSetting * /*setting*/)
 	{
 		// 未実装
 		std::cerr << "Not Implemented Exception" << std::endl;
@@ -528,10 +529,10 @@ namespace pmx
 		this->setting.Read(stream);
 
 		// モデル情報
-		this->model_name = std::move(ReadString(stream, setting.encoding));
-		this->model_english_name = std::move(ReadString(stream, setting.encoding));
-		this->model_comment = std::move(ReadString(stream, setting.encoding));
-		this->model_english_comment = std::move(ReadString(stream, setting.encoding));
+		this->model_name = ReadString(stream, setting.encoding);
+		this->model_english_name = ReadString(stream, setting.encoding);
+		this->model_comment = ReadString(stream, setting.encoding);
+		this->model_english_comment = ReadString(stream, setting.encoding);
 
 		// 頂点
 		stream->read((char*) &vertex_count, sizeof(int));

@@ -8,8 +8,10 @@
 #endif
 
 #include "scene.hpp"
+#include "world.hpp"
 #include "ground_level.hpp"
 #include "shader.hpp"
+#include "camera.hpp"
 #include "render_templates.hpp"
 #include "code/ylikuutio/hierarchy/hierarchy_templates.hpp"
 #include "code/ylikuutio/common/pi.hpp"
@@ -28,39 +30,52 @@
 
 namespace ontology
 {
-    class Object;
+    void Scene::bind_shader(ontology::Shader* const shader)
+    {
+        // get `childID` from `Scene` and set pointer to `shader`.
+        hierarchy::bind_child_to_parent<ontology::Shader*>(
+                shader,
+                this->shader_pointer_vector,
+                this->free_shaderID_queue,
+                &this->number_of_shaders);
+    }
+
+    void Scene::bind_camera(ontology::Camera* const camera)
+    {
+        // get `childID` from `Scene` and set pointer to `camera`.
+        hierarchy::bind_child_to_parent<ontology::Camera*>(
+                camera,
+                this->camera_pointer_vector,
+                this->free_cameraID_queue,
+                &this->number_of_cameras);
+    }
+
+    void Scene::unbind_shader(const int32_t childID)
+    {
+        ontology::Shader* dummy_child_pointer = nullptr;
+        hierarchy::set_child_pointer(
+                childID,
+                dummy_child_pointer,
+                this->shader_pointer_vector,
+                this->free_shaderID_queue,
+                &this->number_of_shaders);
+    }
+
+    void Scene::unbind_camera(const int32_t childID)
+    {
+        ontology::Camera* dummy_child_pointer = nullptr;
+        hierarchy::set_child_pointer(
+                childID,
+                dummy_child_pointer,
+                this->camera_pointer_vector,
+                this->free_cameraID_queue,
+                &this->number_of_cameras);
+    }
 
     void Scene::bind_to_parent()
     {
-        // get `childID` from `Universe` and set pointer to this `Scene`.
-        hierarchy::bind_child_to_parent<ontology::Scene*>(this, this->parent_pointer->scene_pointer_vector, this->parent_pointer->free_sceneID_queue, &this->parent_pointer->number_of_scenes);
-    }
-
-    Scene::Scene(ontology::Universe* const parent_pointer, const float water_level)
-    {
-        // constructor.
-        this->gravity = 9.81f / 60.0f;
-        this->fall_speed = this->gravity;
-        this->water_level = static_cast<GLfloat>(water_level);
-
-        this->universe_pointer = parent_pointer;
-        this->parent_pointer = parent_pointer;
-
-        this->cartesian_coordinates = nullptr;
-        this->spherical_coordinates = nullptr;
-        this->horizontal_angle = NAN;
-        this->vertical_angle = NAN;
-
-        this->number_of_shaders = 0;
-
-        // get `childID` from `Universe` and set pointer to this `Scene`.
-        this->bind_to_parent();
-
-        this->child_vector_pointers_vector.push_back(&this->shader_pointer_vector);
-
-        // make this `Scene` the active `Scene`.
-        this->parent_pointer->set_active_scene(this);
-        this->type = "ontology::Scene*";
+        // get `childID` from `World` and set pointer to this `Scene`.
+        this->parent->bind(this);
     }
 
     Scene::~Scene()
@@ -68,28 +83,22 @@ namespace ontology
         // destructor.
         std::cout << "Scene with childID " << std::dec << this->childID << " will be destroyed.\n";
 
-        // destroy all shaders of this scene.
+        // destroy all `Shader`s of this `Scene`.
         std::cout << "All shaders of this scene will be destroyed.\n";
         hierarchy::delete_children<ontology::Shader*>(this->shader_pointer_vector, &this->number_of_shaders);
 
-        // If this is the active `Scene`, set all `Scene`-related variables to `nullptr` or invalid.
-        if (this->universe_pointer->active_scene == this)
+        // destroy all `Camera`s of this `Scene`.
+        std::cout << "All cameras of this scene will be destroyed.\n";
+        hierarchy::delete_children<ontology::Camera*>(this->camera_pointer_vector, &this->number_of_cameras);
+
+        if (this->parent->get_active_scene() == this)
         {
-            this->universe_pointer->cartesian_coordinates = nullptr;
-
-            this->universe_pointer->direction = glm::vec3(NAN, NAN, NAN);
-
-            this->universe_pointer->right = glm::vec3(NAN, NAN, NAN);
-            this->universe_pointer->up = glm::vec3(NAN, NAN, NAN);
-
-            this->universe_pointer->spherical_coordinates = nullptr;
-
-            this->universe_pointer->horizontal_angle = NAN;
-            this->universe_pointer->vertical_angle = NAN;
-
             // Make this `Scene` no more the active `Scene`.
-            this->universe_pointer->active_scene = nullptr;
+            this->parent->set_active_scene(nullptr);
         }
+
+        // set pointer to this `Scene` to `nullptr`.
+        this->parent->set_scene_pointer(this->childID, nullptr);
     }
 
     void Scene::render()
@@ -102,29 +111,103 @@ namespace ontology
         this->postrender();
     }
 
-    int32_t Scene::get_number_of_children()
+    ontology::Camera* Scene::get_active_camera()
+    {
+        return this->active_camera;
+    }
+
+    void Scene::set_active_camera(ontology::Camera* camera)
+    {
+        this->active_camera = camera;
+
+        if (this->active_camera != nullptr)
+        {
+            this->universe->current_camera_cartesian_coordinates = camera->get_cartesian_coordinates();
+            this->universe->set_projection_matrix(camera->get_projection_matrix());
+            this->universe->set_view_matrix(camera->get_view_matrix());
+            this->universe->current_camera_horizontal_angle = camera->get_horizontal_angle();
+            this->universe->current_camera_vertical_angle = camera->get_vertical_angle();
+        }
+    }
+
+    ontology::Entity* Scene::get_parent() const
+    {
+        return this->parent;
+    }
+
+    int32_t Scene::get_number_of_children() const
     {
         return this->number_of_shaders;
     }
 
-    int32_t Scene::get_number_of_descendants()
+    int32_t Scene::get_number_of_descendants() const
     {
         return -1;
     }
 
-    // this method returns a pointer to an `Object` using the name as key.
-    ontology::Object* Scene::get_object(const std::string name)
+    // this method returns a pointer to an `Entity` using the name as key.
+    ontology::Entity* Scene::get_entity(const std::string name) const
     {
-        return this->name_map[name];
+        if (this->name_map.count(name) != 1)
+        {
+            return nullptr;
+        }
+
+        return this->name_map.at(name);
     }
 
-    void Scene::set_name(const std::string name)
+    float Scene::get_turbo_factor() const
     {
-        ontology::set_name(name, this);
+        if (this->parent == this->universe->get_active_world() && this == this->parent->get_active_scene())
+        {
+            return this->universe->turbo_factor;
+        }
+
+        return NAN;
+    }
+
+    void Scene::set_turbo_factor(float turbo_factor)
+    {
+        this->turbo_factor = turbo_factor;
+
+        if (this->parent == this->universe->get_active_world() && this == this->parent->get_active_scene())
+        {
+            this->universe->turbo_factor = this->turbo_factor;
+        }
+    }
+
+    float Scene::get_twin_turbo_factor() const
+    {
+        if (this->parent == this->universe->get_active_world() && this == this->parent->get_active_scene())
+        {
+            return this->universe->twin_turbo_factor;
+        }
+
+        return NAN;
+    }
+
+    void Scene::set_twin_turbo_factor(float twin_turbo_factor)
+    {
+        this->twin_turbo_factor = twin_turbo_factor;
+
+        if (this->parent == this->universe->get_active_world() && this == this->parent->get_active_scene())
+        {
+            this->universe->twin_turbo_factor = this->twin_turbo_factor;
+        }
+    }
+
+    float Scene::get_water_level() const
+    {
+        return this->water_level;
     }
 
     void Scene::set_shader_pointer(const int32_t childID, ontology::Shader* const child_pointer)
     {
         hierarchy::set_child_pointer(childID, child_pointer, this->shader_pointer_vector, this->free_shaderID_queue, &this->number_of_shaders);
+    }
+
+    void Scene::set_camera_pointer(const int32_t childID, ontology::Camera* const child_pointer)
+    {
+        hierarchy::set_child_pointer(childID, child_pointer, this->camera_pointer_vector, this->free_cameraID_queue, &this->number_of_cameras);
     }
 }

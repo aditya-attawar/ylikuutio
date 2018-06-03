@@ -235,7 +235,7 @@ namespace floatBitsToUint
 		{
 			float A = 1.0f;
 			glm::uint B = glm::floatBitsToUint(A);
-			float C = glm::intBitsToFloat(B);
+			float C = glm::uintBitsToFloat(B);
 			Error += glm::epsilonEqual(A, C, 0.0001f) ? 0 : 1;
 		}
 	
@@ -526,6 +526,20 @@ namespace step_
 	static int test()
 	{
 		int Error = 0;
+
+		// scalar
+		{
+			float const Edge = 2.0f;
+
+			float const A = glm::step(Edge, 1.0f);
+			Error += glm::epsilonEqual(A, 0.0f, glm::epsilon<float>()) ? 0 : 1;
+
+			float const B = glm::step(Edge, 3.0f);
+			Error += glm::epsilonEqual(B, 1.0f, glm::epsilon<float>()) ? 0 : 1;
+
+			float const C = glm::step(Edge, 2.0f);
+			Error += glm::epsilonEqual(C, 1.0f, glm::epsilon<float>()) ? 0 : 1;
+		}
 
 		// vec4 and float
 		{

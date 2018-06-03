@@ -3,7 +3,8 @@
 Open Asset Import Library (assimp)
 ---------------------------------------------------------------------------
 
-Copyright (c) 2006-2017, assimp team
+Copyright (c) 2006-2018, assimp team
+
 
 
 All rights reserved.
@@ -42,6 +43,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "UnitTestPCH.h"
 #include <assimp/SceneCombiner.h>
 #include <assimp/mesh.h>
+#include <memory>
 
 using namespace ::Assimp;
 
@@ -63,8 +65,15 @@ TEST_F( utSceneCombiner, MergeMeshes_ValidNames_Test ) {
     mesh3->mName.Set( "mesh_3" );
     merge_list.push_back( mesh3 );
 
-    aiMesh *out( nullptr );
-    SceneCombiner::MergeMeshes( &out, 0, merge_list.begin(), merge_list.end() );
+    std::unique_ptr<aiMesh> out;
+    aiMesh* ptr = nullptr;
+    SceneCombiner::MergeMeshes( &ptr, 0, merge_list.begin(), merge_list.end() );
+    out.reset(ptr);
     std::string outName = out->mName.C_Str();
     EXPECT_EQ( "mesh_1.mesh_2.mesh_3", outName );
+}
+
+TEST_F( utSceneCombiner, CopySceneWithNullptr_NoException ) {
+    EXPECT_NO_THROW( SceneCombiner::CopyScene( nullptr, nullptr ) );
+    EXPECT_NO_THROW( SceneCombiner::CopySceneFlat( nullptr, nullptr ) );
 }

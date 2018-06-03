@@ -1,23 +1,10 @@
 #include "glyph.hpp"
+#include "vector_font.hpp"
 #include "species_or_glyph.hpp"
 #include "object.hpp"
 #include "glyph_struct.hpp"
 #include "render_templates.hpp"
-#include "code/ylikuutio/triangulation/triangulate_polygons_struct.hpp"
-#include "code/ylikuutio/triangulation/polygon_triangulation.hpp"
 #include "code/ylikuutio/hierarchy/hierarchy_templates.hpp"
-
-// Include GLEW
-#ifndef __GL_GLEW_H_INCLUDED
-#define __GL_GLEW_H_INCLUDED
-#include <GL/glew.h> // GLfloat, GLuint etc.
-#endif
-
-// Include GLFW
-#ifndef __GLFW3_H_INCLUDED
-#define __GLFW3_H_INCLUDED
-#include <GLFW/glfw3.h>
-#endif
 
 // Include standard headers
 #include <stdint.h> // uint32_t etc.
@@ -28,47 +15,7 @@ namespace ontology
     void Glyph::bind_to_parent()
     {
         // get `childID` from `VectorFont` and set pointer to this `Glyph`.
-        hierarchy::bind_child_to_parent<ontology::Glyph*>(this, this->parent_pointer->glyph_pointer_vector, this->parent_pointer->free_glyphID_queue, &this->parent_pointer->number_of_glyphs);
-    }
-
-    Glyph::Glyph(const GlyphStruct glyph_struct)
-    {
-        // constructor.
-        this->parent_pointer = glyph_struct.parent_pointer;
-        this->universe_pointer = this->parent_pointer->universe_pointer;
-
-        this->glyph_vertex_data = glyph_struct.glyph_vertex_data;
-        this->glyph_name_pointer = glyph_struct.glyph_name_pointer;
-        this->unicode_char_pointer = glyph_struct.unicode_char_pointer;
-        this->light_position = glyph_struct.light_position;
-
-        // get `childID` from `VectorFont` and set pointer to this `Glyph`.
-        this->bind_to_parent();
-
-        // TODO: implement triangulation of `Glyph` objects!
-        geometry::TriangulatePolygonsStruct triangulate_polygons_struct;
-        triangulate_polygons_struct.input_vertices = this->glyph_vertex_data;
-        bool triangulating_result = geometry::triangulate_polygons(
-                triangulate_polygons_struct,
-                this->vertices,
-                this->UVs,
-                this->normals);
-
-        if (!triangulating_result)
-        {
-            std::cerr << "triangulation failed!\n";
-        }
-
-        // Get a handle for our buffers.
-        this->vertexPosition_modelspaceID = glGetAttribLocation(this->parent_pointer->parent_pointer->parent_pointer->programID, "vertexPosition_modelspace");
-        this->vertexUVID = glGetAttribLocation(this->parent_pointer->parent_pointer->parent_pointer->programID, "vertexUV");
-        this->vertexNormal_modelspaceID = glGetAttribLocation(this->parent_pointer->parent_pointer->parent_pointer->programID, "vertexNormal_modelspace");
-
-        // TODO: triangulate the vertex data!
-
-        // TODO: load the vertex data the same way as in `ontology::Species::Species(SpeciesStruct species_struct)`!
-
-        this->type = "ontology::Glyph*";
+        this->parent->bind_glyph(this);
     }
 
     Glyph::~Glyph()
@@ -81,12 +28,12 @@ namespace ontology
         // TODO: Cleanup VBO, shader and texture (copy these from `Species::~Species()`).
 
         // set pointer to this `Glyph` to nullptr.
-        this->parent_pointer->set_glyph_pointer(this->childID, nullptr);
+        this->parent->set_glyph_pointer(this->childID, nullptr);
+    }
 
-        if (!this->name.empty() && this->universe_pointer != nullptr)
-        {
-            this->universe_pointer->entity_anyvalue_map[this->name] = nullptr;
-        }
+    ontology::Entity* Glyph::get_parent() const
+    {
+        return this->parent;
     }
 
     void Glyph::render()
@@ -104,8 +51,8 @@ namespace ontology
         hierarchy::set_child_pointer(childID, child_pointer, this->object_pointer_vector, this->free_objectID_queue, &this->number_of_objects);
     }
 
-    void Glyph::set_name(const std::string& name)
+    const char* Glyph::get_unicode_char_pointer()
     {
-        ontology::set_name(name, this);
+        return this->unicode_char_pointer;
     }
 }

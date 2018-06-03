@@ -18,17 +18,11 @@
 #include "triangulation_templates.hpp"
 #include "triangulation_templates.hpp"
 #include "indexing.hpp"
-#include "code/ylikuutio/geometry/spherical_world_struct.hpp"
+#include "code/ylikuutio/geometry/spherical_terrain_struct.hpp"
 #include "code/ylikuutio/geometry/transformation_struct.hpp"
 #include "code/ylikuutio/geometry/transformation.hpp"
 #include "code/ylikuutio/geometry/transformation.hpp"
 #include "code/ylikuutio/common/pi.hpp"
-
-// Include GLEW
-#ifndef __GL_GLEW_H_INCLUDED
-#define __GL_GLEW_H_INCLUDED
-#include <GL/glew.h> // GLfloat, GLuint etc.
-#endif
 
 // Include GLM
 #ifndef __GLM_GLM_HPP_INCLUDED
@@ -37,7 +31,9 @@
 #endif
 
 // Include standard headers
+#include <cmath>    // NAN, std::isnan, std::pow
 #include <cstring>  // std::memcmp, std::strcmp, std::strlen, std::strncmp
+#include <iostream> // std::cout, std::cin, std::cerr
 #include <stdint.h> // uint32_t etc.
 #include <vector>   // std::vector
 
@@ -61,7 +57,7 @@ namespace geometry
             const int32_t actual_image_height = (image_height - 1) / z_step + 1;
             const std::string triangulation_type = triangulate_quads_struct.triangulation_type;
             double sphere_radius = triangulate_quads_struct.sphere_radius;
-            const geometry::SphericalWorldStruct spherical_world_struct = triangulate_quads_struct.spherical_world_struct;
+            const geometry::SphericalTerrainStruct spherical_terrain_struct = triangulate_quads_struct.spherical_terrain_struct;
 
             if (image_width < 2 || image_height < 2 || actual_image_width < 2 || actual_image_height < 2)
             {
@@ -123,14 +119,13 @@ namespace geometry
                 return false;
             }
 
-            std::vector<GLuint> vertexIndices, uvIndices, normalIndices;
             std::vector<glm::vec3> temp_vertices;
             std::vector<glm::vec2> temp_UVs;
             std::vector<glm::vec3> temp_normals;
 
             // Processing stages:
-            // 1. Define the (GLfloat) vertices for vertices loaded from file, `push_back` to `temp_vertices` and `temp_UVs`.
-            // 2. Interpolate the (GLfloat) vertices between, using bilinear interpolation, `push_back` to `temp_vertices` and `temp_UVs`.
+            // 1. Define the (float) vertices for vertices loaded from file, `push_back` to `temp_vertices` and `temp_UVs`.
+            // 2. Interpolate the (float) vertices between, using bilinear interpolation, `push_back` to `temp_vertices` and `temp_UVs`.
             // 3a. Transform spherical coordinates loaded from file (and computed this far as being in horizontal plane) to a curved surface.
             // 3b. For bilinear interpolation: Transform interpolated coordinates (and computed this far as being in horizontal plane) to a curved surface.
             // 4. Compute the face normals, `push_back` to `face_normals`.
@@ -172,7 +167,7 @@ namespace geometry
 
             std::cout << "number of faces: " << n_faces << ".\n";
 
-            uint32_t vertexIndex[3], uvIndex[3], normalIndex[3];
+            uint32_t vertex_index[3], uv_index[3], normal_index[3];
 
             if (is_bilinear_interpolation_in_use)
             {
@@ -208,7 +203,7 @@ namespace geometry
                 transformation_struct.image_height = image_height;
                 transformation_struct.sphere_radius = sphere_radius;
                 transformation_struct.is_bilinear_interpolation_in_use = is_bilinear_interpolation_in_use;
-                transformation_struct.spherical_world_struct = spherical_world_struct;
+                transformation_struct.spherical_terrain_struct = spherical_terrain_struct;
                 geometry::transform_coordinates_to_curved_surface(transformation_struct, temp_vertices);
             }
             else
@@ -259,9 +254,9 @@ namespace geometry
                     temp_vertices,
                     temp_UVs,
                     temp_normals,
-                    vertexIndex,
-                    uvIndex,
-                    normalIndex,
+                    vertex_index,
+                    uv_index,
+                    normal_index,
                     out_vertices,
                     out_UVs,
                     out_normals,

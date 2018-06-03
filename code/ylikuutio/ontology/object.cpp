@@ -1,6 +1,8 @@
 #include "object.hpp"
 #include "glyph.hpp"
 #include "species.hpp"
+#include "model.hpp"
+#include "text3D.hpp"
 #include "object_struct.hpp"
 #include "render_templates.hpp"
 #include "code/ylikuutio/hierarchy/hierarchy_templates.hpp"
@@ -13,66 +15,44 @@
 
 // Include standard headers
 #include <iostream> // std::cout, std::cin, std::cerr
+#include <string>   // std::string
 
 namespace ontology
 {
+    class Entity;
+
     void Object::bind_to_parent()
     {
-        // get `childID` from `Species` or `Glyph` and set pointer to this `Object`.
-
-        if (this->is_character)
-        {
-            ontology::Text3D* parent_pointer;
-            parent_pointer = this->text3D_parent_pointer;
-            // for ontological hierarchy (rendering hierarchy does not use `childID`).
-            // get `childID` from `Glyph` and set pointer to this `Object`.
-            hierarchy::bind_child_to_parent<ontology::Object*>(this, parent_pointer->object_pointer_vector, parent_pointer->free_objectID_queue, &parent_pointer->number_of_objects);
-        }
-        else
-        {
-            ontology::Species* parent_pointer;
-            parent_pointer = this->species_parent_pointer;
-            // for ontological hierarchy (rendering hierarchy does not use `childID`).
-            // get `childID` from `Species` and set pointer to this `Object`.
-            hierarchy::bind_child_to_parent<ontology::Object*>(this, parent_pointer->object_pointer_vector, parent_pointer->free_objectID_queue, &parent_pointer->number_of_objects);
-        }
+        // get `childID` from `Species` or `Text3D` and set pointer to this `Object`.
+        ontology::Model* glyph_parent_model = this->glyph_parent;
+        ontology::Model* species_parent_model = this->species_parent;
+        ontology::Model* parent_model = (this->is_character ? glyph_parent_model : species_parent_model);
+        parent_model->bind(this);
     }
 
-    Object::Object(const ObjectStruct object_struct)
+    void Object::bind_to_new_parent(void* const new_parent)
     {
-        // constructor.
-        this->coordinate_vector     = object_struct.coordinate_vector;
-        this->original_scale_vector = object_struct.original_scale_vector;
-        this->rotate_angle          = object_struct.rotate_angle;
-        this->rotate_vector         = object_struct.rotate_vector;
-        this->translate_vector      = object_struct.translate_vector;
-        this->has_entered           = false;
+        // this method sets pointer to this `Object` to nullptr, sets `parent` according to the input,
+        // and requests a new `childID` from the new `Species` or from the new `Glyph`.
 
-        // enable rendering of a recently entered Object.
-        // TODO: enable entering without enabling rendering.
-        this->should_ylikuutio_render_this_object = true;
+        ontology::Model* glyph_parent_model = this->glyph_parent;
+        ontology::Model* species_parent_model = this->species_parent;
+        ontology::Model* parent_model = (this->is_character ? glyph_parent_model : species_parent_model);
 
-        this->is_character          = object_struct.is_character;
-        this->quaternions_in_use    = object_struct.quaternions_in_use;
+        // unbind from the old parent `Model`.
+        parent_model->unbind(this->childID);
 
         if (this->is_character)
         {
-            this->glyph_parent_pointer   = object_struct.glyph_parent_pointer;
-            this->text3D_parent_pointer  = object_struct.text3D_parent_pointer;
-            this->universe_pointer       = this->text3D_parent_pointer->universe_pointer;
-            this->species_parent_pointer = nullptr;
+            this->glyph_parent = static_cast<ontology::Glyph*>(new_parent);
         }
         else
         {
-            this->species_parent_pointer = object_struct.species_parent_pointer;
-            this->universe_pointer       = this->species_parent_pointer->universe_pointer;
-            this->glyph_parent_pointer   = nullptr;
-            this->text3D_parent_pointer  = nullptr;
+            this->species_parent = static_cast<ontology::Species*>(new_parent);
         }
 
-        // get `childID` from `Species` or `Glyph` and set pointer to this `Object`.
-        this->bind_to_parent();
-        this->type = "ontology::Object*";
+        // get `childID` from `Model` and set pointer to this `Object`.
+        parent_model->bind(this);
     }
 
     Object::~Object()
@@ -82,20 +62,15 @@ namespace ontology
         // set pointer to this object to nullptr.
         if (this->is_character)
         {
-            std::string unicode_string = this->glyph_parent_pointer->unicode_char_pointer;
+            std::string unicode_string = this->glyph_parent->get_unicode_char_pointer();
             std::cout << "Object with childID " << std::dec << this->childID << " (Unicode: \"" << unicode_string << "\") will be destroyed.\n";
-            this->text3D_parent_pointer->set_object_pointer(this->childID, nullptr);
+            this->text3D_parent->set_object_pointer(this->childID, nullptr);
         }
         else
         {
             std::cout << "Object with childID " << std::dec << this->childID << " will be destroyed.\n";
-            this->species_parent_pointer->set_object_pointer(this->childID, nullptr);
+            this->species_parent->set_object_pointer(this->childID, nullptr);
         }
-    }
-
-    void Object::act()
-    {
-        // TODO: act according to this game/simulation object's programming.
     }
 
     void Object::render()
@@ -106,112 +81,146 @@ namespace ontology
         {
             this->prerender();
 
-            ontology::Shader* shader_pointer;
-
             if (this->is_character)
             {
-                shader_pointer = this->glyph_parent_pointer->parent_pointer->parent_pointer->parent_pointer;
-                ontology::render_this_object<ontology::Glyph*>(this, shader_pointer);
+                this->render_this_object(static_cast<ontology::Shader*>(this->glyph_parent->get_parent()->get_parent()->get_parent()));
             }
             else
             {
-                shader_pointer = this->species_parent_pointer->parent_pointer->parent_pointer;
-                ontology::render_this_object<ontology::Species*>(this, shader_pointer);
+                this->render_this_object(static_cast<ontology::Shader*>(this->species_parent->get_parent()->get_parent()));
             }
 
             this->postrender();
         }
     }
 
-    int32_t Object::get_number_of_children()
+    void Object::render_this_object(ontology::Shader* const shader_pointer)
     {
-        return 0;
-    }
-
-    int32_t Object::get_number_of_descendants()
-    {
-        return 0;
-    }
-
-    void Object::bind_to_new_parent(void* const new_parent_pointer)
-    {
-        // this method sets pointer to this `Object` to nullptr, sets `parent_pointer` according to the input,
-        // and requests a new `childID` from the new `Species` or from the new `Glyph`.
-
-        if (this->is_character)
+        if (!this->has_entered)
         {
-            ontology::Glyph* parent_pointer;
-            parent_pointer = this->glyph_parent_pointer;
-            // set pointer to this child to nullptr in the old parent.
-            ontology::Object* dummy_child_pointer = nullptr;
-            hierarchy::set_child_pointer(this->childID, dummy_child_pointer, glyph_parent_pointer->object_pointer_vector, glyph_parent_pointer->free_objectID_queue, &glyph_parent_pointer->number_of_objects);
-            // set the new parent pointer.
-            this->glyph_parent_pointer = static_cast<ontology::Glyph*>(new_parent_pointer);
-            // bind to the new parent.
-            this->bind_to_parent();
+            this->model_matrix = glm::translate(glm::mat4(1.0f), this->cartesian_coordinates);
+
+            if (!this->is_character)
+            {
+                const std::string model_file_format = this->species_parent->get_model_file_format();
+
+                if (model_file_format.compare("fbx") == 0 || model_file_format.compare("FBX") == 0)
+                {
+                    // Only FBX objects need initial rotation.
+                    this->model_matrix = glm::rotate(this->model_matrix, this->initial_rotate_angle, this->initial_rotate_vector);
+                }
+            }
+            this->model_matrix = glm::scale(this->model_matrix, this->original_scale_vector);
+
+            // store the new coordinates to be used in the next update.
+            this->cartesian_coordinates = glm::vec3(this->model_matrix[3][0], this->model_matrix[3][1], this->model_matrix[3][2]);
+            this->has_entered = true;
         }
         else
         {
-            ontology::Species* parent_pointer;
-            parent_pointer = this->species_parent_pointer;
-            // set pointer to this child to nullptr in the old parent.
-            ontology::Object* dummy_child_pointer = nullptr;
-            hierarchy::set_child_pointer(this->childID, dummy_child_pointer, species_parent_pointer->object_pointer_vector, species_parent_pointer->free_objectID_queue, &species_parent_pointer->number_of_objects);
-            // set the new parent pointer.
-            this->species_parent_pointer = static_cast<ontology::Species*>(new_parent_pointer);
-            // bind to the new parent.
-            this->bind_to_parent();
+            // rotate.
+            if (this->rotate_vector != glm::vec3(0.0f, 0.0f, 0.0f))
+            {
+                if (this->quaternions_in_use)
+                {
+                    // create `rotation_matrix` using quaternions.
+                    glm::quat my_quaternion = glm::quat(DEGREES_TO_RADIANS(this->rotate_vector));
+                    glm::mat4 rotation_matrix = glm::mat4_cast(my_quaternion);
+                    this->model_matrix = rotation_matrix * this->model_matrix;
+                }
+                else
+                {
+                    this->model_matrix = glm::rotate(this->model_matrix, this->rotate_angle, this->rotate_vector);
+                }
+            }
+
+            this->model_matrix = glm::translate(this->model_matrix, this->translate_vector);
+            this->cartesian_coordinates = glm::vec3(this->model_matrix[3][0], this->model_matrix[3][1], this->model_matrix[3][2]);
+        }
+
+        this->MVP_matrix = this->universe->get_projection_matrix() * this->universe->get_view_matrix() * this->model_matrix;
+
+        // Send our transformation to the currently bound shader,
+        // in the "MVP" uniform.
+        glUniformMatrix4fv(shader_pointer->get_matrixID(), 1, GL_FALSE, &this->MVP_matrix[0][0]);
+        glUniformMatrix4fv(shader_pointer->get_model_matrixID(), 1, GL_FALSE, &this->model_matrix[0][0]);
+
+        ontology::Model* glyph_parent_model = this->glyph_parent;
+        ontology::Model* species_parent_model = this->species_parent;
+        ontology::Model* parent_model = (this->is_character ? glyph_parent_model : species_parent_model);
+        GLuint vertexbuffer = parent_model->get_vertexbuffer();
+        GLuint vertex_position_modelspaceID = parent_model->get_vertex_position_modelspaceID();
+        GLuint uvbuffer = parent_model->get_uvbuffer();
+        GLuint vertexUVID = parent_model->get_vertexUVID();
+        GLuint normalbuffer = parent_model->get_normalbuffer();
+        GLuint vertex_normal_modelspaceID = parent_model->get_vertex_normal_modelspaceID();
+        GLuint elementbuffer = parent_model->get_elementbuffer();
+        GLuint indices_size = parent_model->get_indices().size();
+
+        // 1st attribute buffer : vertices.
+        glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+        glVertexAttribPointer(
+                vertex_position_modelspaceID, // The attribute we want to configure
+                3,                           // size
+                GL_FLOAT,                    // type
+                GL_FALSE,                    // normalized?
+                0,                           // stride
+                (void*) 0                    // array buffer offset
+                );
+
+        // 2nd attribute buffer : UVs.
+        glBindBuffer(GL_ARRAY_BUFFER, uvbuffer);
+        glVertexAttribPointer(
+                vertexUVID, // The attribute we want to configure
+                2,          // size : U+V => 2
+                GL_FLOAT,   // type
+                GL_FALSE,   // normalized?
+                0,          // stride
+                (void*) 0   // array buffer offset
+                );
+
+        // 3rd attribute buffer : normals.
+        glBindBuffer(GL_ARRAY_BUFFER, normalbuffer);
+        glVertexAttribPointer(
+                vertex_normal_modelspaceID, // The attribute we want to configure
+                3,                         // size
+                GL_FLOAT,                  // type
+                GL_FALSE,                  // normalized?
+                0,                         // stride
+                (void*) 0                  // array buffer offset
+                );
+
+        // Index buffer.
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
+
+        // Draw the triangles!
+        glDrawElements(
+                GL_TRIANGLES,    // mode
+                indices_size,    // count
+                GL_UNSIGNED_INT, // type
+                (void*) 0        // element array buffer offset
+                );
+    }
+
+    ontology::Entity* Object::get_parent() const
+    {
+        if (this->is_character)
+        {
+            return this->glyph_parent;
+        }
+        else
+        {
+            return this->species_parent;
         }
     }
 
-    void Object::set_name(const std::string& name)
+    int32_t Object::get_number_of_children() const
     {
-        ontology::set_name(name, this);
+        return 0;
     }
 
-    // Public callbacks (to be called from AI scripts written in Chibi-Scheme).
-
-    void Object::set_dest(ontology::Object* const object, const float x, const float y, const float z)
+    int32_t Object::get_number_of_descendants() const
     {
-        // Set target towards which to move.
-        object->dest_vector = glm::vec3(x, y, z);
+        return 0;
     }
-
-    float Object::get_x(const ontology::Object* const object)
-    {
-        // Get x coordinate of `object`.
-        return object->coordinate_vector.x;
-    }
-
-    float Object::get_y(const ontology::Object* const object)
-    {
-        // Get y coordinate of `object`.
-        return object->coordinate_vector.x;
-    }
-
-    float Object::get_z(const ontology::Object* const object)
-    {
-        // Get z coordinate of `object`.
-        return object->coordinate_vector.x;
-    }
-
-    float Object::get_dest_x(const ontology::Object* const object)
-    {
-        // Get x destination coordinate of `object`.
-        return object->dest_vector.x;
-    }
-
-    float Object::get_dest_y(const ontology::Object* const object)
-    {
-        // Get y destination coordinate of `object`.
-        return object->dest_vector.x;
-    }
-
-    float Object::get_dest_z(const ontology::Object* const object)
-    {
-        // Get z destination coordinate of `object`.
-        return object->dest_vector.x;
-    }
-
-    // Public callbacks end here.
 }
