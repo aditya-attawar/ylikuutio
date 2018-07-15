@@ -14,7 +14,7 @@ set(ENABLE_SCRIPTING_WITH_TINYSCHEME true)
 set(COMPILE_SFML_FROM_SOURCE true)
 
 # comment the following line to disable unit tests with Google Test.
-set(DO_UNIT_TESTS_WITH_GOOGLE_TEST true)
+# set(DO_UNIT_TESTS_WITH_GOOGLE_TEST true)
 
 # uncomment the following line to disable updating of external projects.
 set(DISABLE_UPDATE_STEP true)
@@ -76,6 +76,9 @@ set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 if (COMPILE_SFML_FROM_SOURCE)
     include_directories(
         external/SFML-2.4.2/include/
+        external/SFML-2.4.2/src
+        external/SFML-2.4.2/extlibs/headers/
+        external/SFML-2.4.2/extlibs/headers/AL/
         )
 else()
     include_directories(
