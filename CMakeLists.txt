@@ -140,7 +140,7 @@ if(DO_UNIT_TESTS_WITH_GOOGLE_TEST)
             # Disable update step
             UPDATE_COMMAND ""
             # custom patch command
-            PATCH_COMMAND git reset --hard 6316d8943313d0c267417bb7d2fba4716a8bb6ee
+            PATCH_COMMAND git reset --hard 77962730563eece3525f40b8769e4ca0c6baf64c
             LOG_DOWNLOAD ON
             LOG_BUILD ON
             )
@@ -153,7 +153,7 @@ if(DO_UNIT_TESTS_WITH_GOOGLE_TEST)
             # Disable install step
             INSTALL_COMMAND ""
             # custom patch command
-            PATCH_COMMAND git reset --hard 6316d8943313d0c267417bb7d2fba4716a8bb6ee
+            PATCH_COMMAND git reset --hard 77962730563eece3525f40b8769e4ca0c6baf64c
             LOG_DOWNLOAD ON
             LOG_BUILD ON
             )
@@ -198,7 +198,7 @@ if(DO_UNIT_TESTS_WITH_GOOGLE_TEST)
             # Disable update step
             UPDATE_COMMAND ""
             # custom patch command
-            PATCH_COMMAND git reset --hard 6316d8943313d0c267417bb7d2fba4716a8bb6ee
+            PATCH_COMMAND git reset --hard 77962730563eece3525f40b8769e4ca0c6baf64c
             LOG_DOWNLOAD ON
             LOG_BUILD ON
             )
@@ -211,7 +211,7 @@ if(DO_UNIT_TESTS_WITH_GOOGLE_TEST)
             # Disable install step
             INSTALL_COMMAND ""
             # custom patch command
-            PATCH_COMMAND git reset --hard 6316d8943313d0c267417bb7d2fba4716a8bb6ee
+            PATCH_COMMAND git reset --hard 77962730563eece3525f40b8769e4ca0c6baf64c
             LOG_DOWNLOAD ON
             LOG_BUILD ON
             )
@@ -337,6 +337,7 @@ configure_file(res/fonts/Holstein.bmp Holstein.bmp COPYONLY)
 configure_file(res/height_maps/noise1024x1024.bmp noise1024x1024.bmp COPYONLY)
 configure_file(res/height_maps/noise256x256.bmp noise256x256.bmp COPYONLY)
 configure_file(res/height_maps/noise128x128.bmp noise128x128.bmp COPYONLY)
+configure_file(res/height_maps/N59E024.hgt N59E024.hgt COPYONLY)
 configure_file(res/height_maps/S17W069.hgt S17W069.hgt COPYONLY)
 configure_file(res/height_maps/L4133D.asc L4133D.asc COPYONLY)
 configure_file(res/height_maps/N5424G.asc N5424G.asc COPYONLY)
@@ -469,8 +470,6 @@ add_library(ylikuutio STATIC
     code/ylikuutio/load/font_loader.cpp
     code/ylikuutio/load/font_loader.hpp
     code/ylikuutio/load/heightmap_loader_struct.hpp
-    code/ylikuutio/load/las_loader.cpp
-    code/ylikuutio/load/las_loader.hpp
     code/ylikuutio/load/obj_loader.cpp
     code/ylikuutio/load/obj_loader.hpp
     code/ylikuutio/load/shader_loader.cpp
@@ -643,6 +642,8 @@ add_executable(ajokki
     code/ajokki/ajokki_console_callbacks.hpp
     code/ajokki/ajokki_debug.cpp
     code/ajokki/ajokki_debug.hpp
+    code/ajokki/ajokki_altiplano_scene.cpp
+    code/ajokki/ajokki_altiplano_scene.hpp
     code/ajokki/ajokki_helsinki_east_downtown_scene.cpp
     code/ajokki/ajokki_helsinki_east_downtown_scene.hpp
     code/ajokki/ajokki_joensuu_center_west_scene.cpp
@@ -653,6 +654,8 @@ add_executable(ajokki
     code/ajokki/ajokki_location_and_orientation.hpp
     code/ajokki/ajokki_movement.cpp
     code/ajokki/ajokki_movement.hpp
+    code/ajokki/ajokki_tallinn_scene.cpp
+    code/ajokki/ajokki_tallinn_scene.hpp
     code/ajokki/ajokki_wireframe.cpp
     code/ajokki/ajokki_wireframe.hpp
     )
