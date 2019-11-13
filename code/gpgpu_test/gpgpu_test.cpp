@@ -31,9 +31,11 @@
 #include "gpgpu_test_scene.hpp"
 #include "code/app/app_keyboard_callbacks.hpp"
 #include "code/ylikuutio/input/input.hpp"
-#include "code/ylikuutio/callback_system/callback_object.hpp"
-#include "code/ylikuutio/callback_system/callback_engine.hpp"
-#include "code/ylikuutio/callback_system/callback_magic_numbers.hpp"
+#include "code/ylikuutio/input/input_master.hpp"
+#include "code/ylikuutio/input/input_mode.hpp"
+#include "code/ylikuutio/callback/callback_object.hpp"
+#include "code/ylikuutio/callback/callback_engine.hpp"
+#include "code/ylikuutio/callback/callback_magic_numbers.hpp"
 #include "code/ylikuutio/command_line/command_line_master.hpp"
 #include "code/ylikuutio/ontology/universe.hpp"
 #include "code/ylikuutio/ontology/font2D.hpp"
@@ -74,12 +76,6 @@ int main(const int argc, const char* const argv[])
 
     command_line_master.print_keys_and_values();
 
-    // keypress callbacks.
-    std::vector<yli::callback_system::KeyAndCallbackStruct> action_mode_keypress_callback_engines;
-
-    // This vector points to the current keypress callback engines vector.
-    std::vector<yli::callback_system::KeyAndCallbackStruct>* current_keypress_callback_engine_vector_pointer = &action_mode_keypress_callback_engines;
-
     // Create the `Universe`, store it in `my_universe`.
     std::cout << "Creating yli::ontology::Entity* my_universe_entity ...\n";
     yli::ontology::UniverseStruct universe_struct;
@@ -93,8 +89,10 @@ int main(const int argc, const char* const argv[])
 
     yli::ontology::EntityFactory* const entity_factory = my_universe->get_entity_factory();
 
-    std::cout << "Creating yli::callback_system::CallbackEngine cleanup_callback_engine ...\n";
-    yli::callback_system::CallbackEngine cleanup_callback_engine = yli::callback_system::CallbackEngine();
+    yli::input::InputMaster* const input_master = my_universe->get_input_master();
+
+    std::cout << "Creating yli::callback::CallbackEngine cleanup_callback_engine ...\n";
+    yli::callback::CallbackEngine cleanup_callback_engine = yli::callback::CallbackEngine();
     cleanup_callback_engine.create_CallbackObject(nullptr);
 
     if (my_universe->get_window() == nullptr)
@@ -174,12 +172,13 @@ int main(const int argc, const char* const argv[])
     std::cout << "Defining action mode keypress callback engines.\n";
 
     // Callback code for esc: exit program.
-    yli::callback_system::CallbackEngine exit_program_callback_engine;
+    yli::callback::CallbackEngine exit_program_callback_engine;
     exit_program_callback_engine.create_CallbackObject(&app::exit_program);
 
     // Keypress callbacks for action mode.
     // Keypresses are checked in the order of this struct.
-    action_mode_keypress_callback_engines.push_back(yli::callback_system::KeyAndCallbackStruct { SDL_SCANCODE_ESCAPE, &exit_program_callback_engine });
+    yli::input::InputMode* const action_mode_input_mode = input_master->create_InputMode();
+    action_mode_input_mode->set_keypress_callback_engine(SDL_SCANCODE_ESCAPE, &exit_program_callback_engine);
 
     // For speed computation
     double last_time_to_display_FPS = yli::time::get_time();
@@ -221,31 +220,40 @@ int main(const int argc, const char* const argv[])
 
             my_universe->compute_delta_time();
 
+            const yli::input::InputMode* const input_mode = input_master->get_active_input_mode();
+
             // poll all SDL events.
             while (SDL_PollEvent(&sdl_event))
             {
-                if (sdl_event.type == SDL_KEYDOWN && current_keypress_callback_engine_vector_pointer != nullptr)
+                if (sdl_event.type == SDL_KEYDOWN && input_mode != nullptr)
                 {
                     const uint32_t scancode = static_cast<std::uint32_t>(sdl_event.key.keysym.scancode);
 
-                    for (std::size_t i = 0; i < current_keypress_callback_engine_vector_pointer->size(); i++)
+                    yli::callback::CallbackEngine* const callback_engine = input_mode->get_keypress_callback_engine(scancode);
+
+                    if (callback_engine == nullptr)
                     {
-                        if (current_keypress_callback_engine_vector_pointer->at(i).keycode == scancode)
+                        continue;
+                    }
+
+                    const std::shared_ptr<yli::common::AnyValue> any_value = callback_engine->execute();
+
+                    if (any_value != nullptr &&
+                            any_value->type == yli::common::Datatype::UINT32_T)
+                    {
+                        if (any_value->uint32_t_value == ENTER_CONSOLE_MAGIC_NUMBER)
                         {
-                            yli::callback_system::CallbackEngine* const callback_engine = current_keypress_callback_engine_vector_pointer->at(i).callback_engine;
-                            const std::shared_ptr<yli::common::AnyValue> any_value = callback_engine->execute();
-
-                            if (any_value != nullptr &&
-                                    any_value->type == yli::common::Datatype::UINT32_T)
-                            {
-                                if (any_value->uint32_t_value == EXIT_PROGRAM_MAGIC_NUMBER)
-                                {
-                                    my_universe->request_exit();
-                                }
-
-                                // process no more than 1 callback for each keypress.
-                                break;
-                            }
+                            // Do not display help screen when in console.
+                            my_universe->can_display_help_screen = false;
+                        }
+                        else if (any_value->uint32_t_value == EXIT_CONSOLE_MAGIC_NUMBER)
+                        {
+                            // Enable display help screen when not in console.
+                            my_universe->can_display_help_screen = true;
+                        }
+                        else if (any_value->uint32_t_value == EXIT_PROGRAM_MAGIC_NUMBER)
+                        {
+                            my_universe->request_exit();
                         }
                     }
                 }

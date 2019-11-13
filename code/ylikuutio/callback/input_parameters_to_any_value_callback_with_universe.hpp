@@ -15,31 +15,37 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef __CONSOLE_STRUCT_HPP_INCLUDED
-#define __CONSOLE_STRUCT_HPP_INCLUDED
-
-#include "code/ylikuutio/callback_system/key_and_callback_struct.hpp"
+#ifndef __INPUT_PARAMETERS_TO_ANY_VALUE_CALLBACK_WITH_UNIVERSE_HPP_INCLUDED
+#define __INPUT_PARAMETERS_TO_ANY_VALUE_CALLBACK_WITH_UNIVERSE_HPP_INCLUDED
 
 // Include standard headers
+#include <memory>   // std::make_shared, std::shared_ptr
 #include <vector>   // std::vector
 
 namespace yli
 {
+    namespace callback
+    {
+        class CallbackEngine;
+        class CallbackObject;
+        class CallbackParameter;
+    }
+
+    namespace common
+    {
+        class AnyValue;
+    }
+
     namespace ontology
     {
-        struct ConsoleStruct
-        {
-            ConsoleStruct()
-                : current_keypress_callback_engine_vector_pointer_pointer(nullptr),
-                current_keyrelease_callback_engine_vector_pointer_pointer(nullptr)
-            {
-                // constructor.
-            }
-
-            std::vector<yli::callback_system::KeyAndCallbackStruct>** current_keypress_callback_engine_vector_pointer_pointer;
-            std::vector<yli::callback_system::KeyAndCallbackStruct>** current_keyrelease_callback_engine_vector_pointer_pointer;
-        };
+        class Universe;
     }
 }
+
+typedef std::shared_ptr<yli::common::AnyValue> (*InputParametersToAnyValueCallbackWithUniverse) (
+        yli::ontology::Universe*,
+        yli::callback::CallbackEngine*,
+        yli::callback::CallbackObject*,
+        std::vector<yli::callback::CallbackParameter*>&);
 
 #endif
