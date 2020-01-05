@@ -1,6 +1,6 @@
 // Ylikuutio - A 3D game and simulation engine.
 //
-// Copyright (C) 2015-2019 Antti Nuortimo.
+// Copyright (C) 2015-2020 Antti Nuortimo.
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as
@@ -251,6 +251,106 @@ namespace app
         }
 
         movable->horizontal_angle = 1.0 * PI;
+        return nullptr;
+    }
+
+    std::shared_ptr<yli::common::AnyValue> orient_and_go_east(
+            yli::ontology::Universe*,
+            yli::callback::CallbackEngine*,
+            yli::callback::CallbackObject*,
+            std::vector<yli::callback::CallbackParameter*>& input_parameters,
+            std::shared_ptr<yli::common::AnyValue> any_value)
+    {
+        if (any_value->type != yli::common::Datatype::MOVABLE_POINTER)
+        {
+            std::cerr << "ERROR: `app::orient_and_go_west`: `any_value->type` is not `yli::common::Datatype::MOVABLE_POINTER`.\n";
+            return nullptr;
+        }
+
+        yli::ontology::Movable* const movable = any_value->movable_pointer;
+
+        if (movable == nullptr)
+        {
+            return nullptr;
+        }
+
+        movable->horizontal_angle = 1.5 * PI;
+        movable->cartesian_coordinates.x += 1.0;
+        return nullptr;
+    }
+
+    std::shared_ptr<yli::common::AnyValue> orient_and_go_west(
+            yli::ontology::Universe*,
+            yli::callback::CallbackEngine*,
+            yli::callback::CallbackObject*,
+            std::vector<yli::callback::CallbackParameter*>& input_parameters,
+            std::shared_ptr<yli::common::AnyValue> any_value)
+    {
+        if (any_value->type != yli::common::Datatype::MOVABLE_POINTER)
+        {
+            std::cerr << "ERROR: `app::orient_and_go_west`: `any_value->type` is not `yli::common::Datatype::MOVABLE_POINTER`.\n";
+            return nullptr;
+        }
+
+        yli::ontology::Movable* const movable = any_value->movable_pointer;
+
+        if (movable == nullptr)
+        {
+            return nullptr;
+        }
+
+        movable->horizontal_angle = 0.5 * PI;
+        movable->cartesian_coordinates.x -= 1.0;
+        return nullptr;
+    }
+
+    std::shared_ptr<yli::common::AnyValue> orient_and_go_north(
+            yli::ontology::Universe*,
+            yli::callback::CallbackEngine*,
+            yli::callback::CallbackObject*,
+            std::vector<yli::callback::CallbackParameter*>& input_parameters,
+            std::shared_ptr<yli::common::AnyValue> any_value)
+    {
+        if (any_value->type != yli::common::Datatype::MOVABLE_POINTER)
+        {
+            std::cerr << "ERROR: `app::orient_and_go_north`: `any_value->type` is not `yli::common::Datatype::MOVABLE_POINTER`.\n";
+            return nullptr;
+        }
+
+        yli::ontology::Movable* const movable = any_value->movable_pointer;
+
+        if (movable == nullptr)
+        {
+            return nullptr;
+        }
+
+        movable->horizontal_angle = 0.0;
+        movable->cartesian_coordinates.z -= 1.0;
+        return nullptr;
+    }
+
+    std::shared_ptr<yli::common::AnyValue> orient_and_go_south(
+            yli::ontology::Universe*,
+            yli::callback::CallbackEngine*,
+            yli::callback::CallbackObject*,
+            std::vector<yli::callback::CallbackParameter*>& input_parameters,
+            std::shared_ptr<yli::common::AnyValue> any_value)
+    {
+        if (any_value->type != yli::common::Datatype::MOVABLE_POINTER)
+        {
+            std::cerr << "ERROR: `app::orient_and_go_south`: `any_value->type` is not `yli::common::Datatype::MOVABLE_POINTER`.\n";
+            return nullptr;
+        }
+
+        yli::ontology::Movable* const movable = any_value->movable_pointer;
+
+        if (movable == nullptr)
+        {
+            return nullptr;
+        }
+
+        movable->horizontal_angle = 1.0 * PI;
+        movable->cartesian_coordinates.z += 1.0;
         return nullptr;
     }
 

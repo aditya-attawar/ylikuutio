@@ -1,6 +1,6 @@
 // Ylikuutio - A 3D game and simulation engine.
 //
-// Copyright (C) 2015-2019 Antti Nuortimo.
+// Copyright (C) 2015-2020 Antti Nuortimo.
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as
@@ -101,6 +101,34 @@ namespace app
             std::shared_ptr<yli::common::AnyValue>);
 
     std::shared_ptr<yli::common::AnyValue> orient_to_south(
+            yli::ontology::Universe*,
+            yli::callback::CallbackEngine*,
+            yli::callback::CallbackObject*,
+            std::vector<yli::callback::CallbackParameter*>& input_parameters,
+            std::shared_ptr<yli::common::AnyValue>);
+
+    std::shared_ptr<yli::common::AnyValue> orient_and_go_east(
+            yli::ontology::Universe*,
+            yli::callback::CallbackEngine*,
+            yli::callback::CallbackObject*,
+            std::vector<yli::callback::CallbackParameter*>& input_parameters,
+            std::shared_ptr<yli::common::AnyValue>);
+
+    std::shared_ptr<yli::common::AnyValue> orient_and_go_west(
+            yli::ontology::Universe*,
+            yli::callback::CallbackEngine*,
+            yli::callback::CallbackObject*,
+            std::vector<yli::callback::CallbackParameter*>& input_parameters,
+            std::shared_ptr<yli::common::AnyValue>);
+
+    std::shared_ptr<yli::common::AnyValue> orient_and_go_north(
+            yli::ontology::Universe*,
+            yli::callback::CallbackEngine*,
+            yli::callback::CallbackObject*,
+            std::vector<yli::callback::CallbackParameter*>& input_parameters,
+            std::shared_ptr<yli::common::AnyValue>);
+
+    std::shared_ptr<yli::common::AnyValue> orient_and_go_south(
             yli::ontology::Universe*,
             yli::callback::CallbackEngine*,
             yli::callback::CallbackObject*,
