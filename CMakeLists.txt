@@ -3,6 +3,10 @@ cmake_minimum_required(VERSION 2.6.2)
 set(CMAKE_CXX_STANDARD 17)
 project(ylikuutio)
 
+#-------------------------------------------------------+
+# the options part intended to be modified begins here. |
+#-------------------------------------------------------+
+
 # http://stackoverflow.com/questions/11783932/how-to-add-linker-or-compile-flag-in-cmake-file/11797272#11797272
 # SET(GCC_COVERAGE_LINK_FLAGS "-ldl")
 # SET(CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS}")
@@ -17,6 +21,10 @@ set(COMPILE_SDL_FROM_SOURCE true)
 # uncomment the following line to disable updating of external projects.
 set(DISABLE_UPDATE_STEP true)
 
+#-------------------------------------------------------+
+# the options part intended to be modified ends here.   |
+#-------------------------------------------------------+
+
 if(CMAKE_CROSSCOMPILING AND CMAKE_SYSTEM_NAME STREQUAL "Android")
     find_library(OpenGL REQUIRED)
 else()
@@ -25,20 +33,26 @@ endif()
 
 find_package(Threads REQUIRED)
 
-if (NOT(COMPILE_SDL_FROM_SOURCE))
-    set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake_modules" ${CMAKE_MODULE_PATH})
-    set(CMAKE_EXE_LINKER_FLAGS "-static -static-libgcc -static-libstdc++")
-    find_package(SDL2 REQUIRED)
+if(CMAKE_CROSSCOMPILING AND CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    # crosscompiling from Linux to Windows must compile SDL from source.
+    # dynamic linking of SDL when crosscompiling from Linux to Windows is not supported.
+    set(COMPILE_SDL_FROM_SOURCE true)
 endif()
 
-if (NOT(COMPILE_SDL_FROM_SOURCE))
+# When doing a regular build in Linux, SDL can be linked either statically or dynamically.
+if(NOT(COMPILE_SDL_FROM_SOURCE))
     set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake_modules" ${CMAKE_MODULE_PATH})
+    find_package(SDL2 REQUIRED)
 endif()
 
 # Compile external dependencies
 add_subdirectory (external)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -Wall -Wextra")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -Wall")
+if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    # Clang and GCC accept `-Wextra`, but Visual Studio does not seem to accept it.
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wextra")
+endif()
 
 # set(CMAKE_COLOR_MAKEFILE ON)
 # set(CMAKE_VERBOSE_MAKEFILE ON)
@@ -886,6 +900,8 @@ create_target_launcher(ajokki WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/cod
 # Tests
 if(DO_UNIT_TESTS_WITH_GOOGLE_TEST)
     set(FILES_TO_TEST
+        code/ylikuutio/audio/audio_master.cpp
+        code/ylikuutio/audio/audio_master.hpp
         code/ylikuutio/callback/callback_engine.cpp
         code/ylikuutio/callback/callback_engine.hpp
         code/ylikuutio/callback/callback_object.cpp
@@ -944,6 +960,8 @@ if(DO_UNIT_TESTS_WITH_GOOGLE_TEST)
         code/ylikuutio/load/heightmap_loader_struct.hpp
         code/ylikuutio/load/image_file_loader.cpp
         code/ylikuutio/load/image_file_loader.hpp
+        code/ylikuutio/load/obj_loader.cpp
+        code/ylikuutio/load/obj_loader.hpp
         code/ylikuutio/memory/memory_templates.hpp
         code/ylikuutio/ontology/any_struct_entity.cpp
         code/ylikuutio/ontology/any_struct_entity.hpp
@@ -1061,10 +1079,6 @@ if(DO_UNIT_TESTS_WITH_GOOGLE_TEST)
 
     add_library(code_to_test ${FILES_TO_TEST})
     add_dependencies(code_to_test ylikuutio ${ALL_LIBS} pthread)
-
-    add_executable(do_tests_googletest ${MAIN_FILE})
-    add_dependencies(do_tests_googletest ylikuutio ${ALL_LIBS} pthread)
-    target_link_libraries(do_tests_googletest code_to_test)
 
     add_executable(unit_tests_with_googletest code/ylikuutio/tests/googletest/test_main.cpp ${UNIT_TESTS})
     target_link_libraries(unit_tests_with_googletest gtest libgtest rt SDL2 GLEW_200 angelscript stb ylikuutio pthread code_to_test)
