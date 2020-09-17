@@ -39,6 +39,7 @@
 #include "code/ylikuutio/command_line/command_line_master.hpp"
 #include "code/ylikuutio/console/console_callback_engine.hpp"
 #include "code/ylikuutio/console/console_callback_object.hpp"
+#include "code/ylikuutio/core/application.hpp"
 #include "code/ylikuutio/core/entrypoint.hpp"
 #include "code/ylikuutio/data/any_value.hpp"
 #include "code/ylikuutio/data/pi.hpp"
@@ -48,7 +49,6 @@
 
 // `yli::ontology` files included in the canonical order.
 #include "code/ylikuutio/ontology/entity.hpp"
-#include "code/ylikuutio/ontology/application.hpp"
 #include "code/ylikuutio/ontology/variable.hpp"
 #include "code/ylikuutio/ontology/universe.hpp"
 #include "code/ylikuutio/ontology/world.hpp"
@@ -108,16 +108,13 @@
 
 namespace hirvi
 {
-    class HirviApplication: public yli::ontology::Application
+    class HirviApplication: public yli::core::Application
     {
         public:
             HirviApplication(const int argc, const char* const argv[])
-                : yli::ontology::Application(argc, argv)
+                : yli::core::Application(argc, argv)
             {
                 // constructor.
-
-                // `yli::ontology::Entity` member variables begin here.
-                this->type_string = "hirvi::HirviApplication*";
             }
 
             ~HirviApplication()
@@ -130,9 +127,9 @@ namespace hirvi
                 return "Hirvi";
             }
 
-            std::pair<bool, std::shared_ptr<yli::ontology::UniverseStruct>> get_universe_struct() override
+            std::vector<std::string> get_valid_keys() override
             {
-                const std::vector<std::string> valid_keys {
+                return {
                     "help",
                         "version",
                         "silent",
@@ -147,41 +144,29 @@ namespace hirvi
                         "twin_turbo_factor",
                         "mouse_speed"
                 };
+            }
 
-                const std::vector<std::string> invalid_keys = this->command_line_master.get_invalid_keys(valid_keys);
-
-                if (!this->command_line_master.check_keys(valid_keys))
-                {
-                    std::cerr << "ERROR: 1 or more invalid command line parameters given.\n";
-
-                    const std::vector<std::string> invalid_keys = this->command_line_master.get_invalid_keys(valid_keys);
-
-                    for (std::vector<std::string>::const_iterator it = invalid_keys.begin(); it != invalid_keys.end(); it++)
-                    {
-                        std::cerr << "Invalid key: " << *it << "\n";
-                    }
-
-                    return std::pair(false, nullptr);
-                }
-
-                std::shared_ptr<yli::ontology::UniverseStruct> universe_struct_shared_ptr = std::make_shared<yli::ontology::UniverseStruct>();
+            yli::ontology::UniverseStruct get_universe_struct() override
+            {
+                yli::ontology::UniverseStruct universe_struct;
                 std::stringstream window_title_stringstream;
                 window_title_stringstream << "Hirvi " << yli::ontology::Universe::version << ", powered by Ylikuutio " << yli::ontology::Universe::version;
-                universe_struct_shared_ptr->window_title = window_title_stringstream.str();
+                universe_struct.application_name = "Hirvi";
+                universe_struct.window_title = window_title_stringstream.str();
 
                 if (this->command_line_master.is_key("silent"))
                 {
-                    universe_struct_shared_ptr->is_silent = true;
+                    universe_struct.is_silent = true;
                 }
 
                 if (this->command_line_master.is_key("fullscreen"))
                 {
-                    universe_struct_shared_ptr->is_fullscreen = true;
+                    universe_struct.is_fullscreen = true;
                 }
 
                 if (this->command_line_master.is_key("headless"))
                 {
-                    universe_struct_shared_ptr->is_headless = true;
+                    universe_struct.is_headless = true;
                 }
 
                 if (this->command_line_master.is_key("window_width") &&
@@ -189,7 +174,7 @@ namespace hirvi
                 {
                     const std::string window_width = this->command_line_master.get_value("window_width");
                     std::size_t index = 0;
-                    universe_struct_shared_ptr->window_width = yli::string::extract_uint32_t_value_from_string(window_width, index, nullptr, nullptr);
+                    universe_struct.window_width = yli::string::extract_uint32_t_value_from_string(window_width, index, nullptr, nullptr);
                 }
 
                 if (this->command_line_master.is_key("window_height") &&
@@ -197,7 +182,7 @@ namespace hirvi
                 {
                     const std::string window_height = this->command_line_master.get_value("window_height");
                     std::size_t index = 0;
-                    universe_struct_shared_ptr->window_height = yli::string::extract_uint32_t_value_from_string(window_height, index, nullptr, nullptr);
+                    universe_struct.window_height = yli::string::extract_uint32_t_value_from_string(window_height, index, nullptr, nullptr);
                 }
 
                 if (this->command_line_master.is_key("framebuffer_width") &&
@@ -205,7 +190,7 @@ namespace hirvi
                 {
                     const std::string framebuffer_width = this->command_line_master.get_value("framebuffer_width");
                     std::size_t index = 0;
-                    universe_struct_shared_ptr->framebuffer_width = yli::string::extract_uint32_t_value_from_string(framebuffer_width, index, nullptr, nullptr);
+                    universe_struct.framebuffer_width = yli::string::extract_uint32_t_value_from_string(framebuffer_width, index, nullptr, nullptr);
                 }
 
                 if (this->command_line_master.is_key("framebuffer_height") &&
@@ -213,7 +198,7 @@ namespace hirvi
                 {
                     const std::string framebuffer_height = this->command_line_master.get_value("framebuffer_height");
                     std::size_t index = 0;
-                    universe_struct_shared_ptr->framebuffer_height = yli::string::extract_uint32_t_value_from_string(framebuffer_height, index, nullptr, nullptr);
+                    universe_struct.framebuffer_height = yli::string::extract_uint32_t_value_from_string(framebuffer_height, index, nullptr, nullptr);
                 }
 
                 if (this->command_line_master.is_key("speed") &&
@@ -221,7 +206,7 @@ namespace hirvi
                 {
                     const std::string speed = this->command_line_master.get_value("speed");
                     std::size_t index = 0;
-                    universe_struct_shared_ptr->speed = yli::string::extract_float_value_from_string(speed, index, nullptr, nullptr);
+                    universe_struct.speed = yli::string::extract_float_value_from_string(speed, index, nullptr, nullptr);
                 }
 
                 if (this->command_line_master.is_key("turbo_factor") &&
@@ -229,7 +214,7 @@ namespace hirvi
                 {
                     const std::string turbo_factor = this->command_line_master.get_value("turbo_factor");
                     std::size_t index = 0;
-                    universe_struct_shared_ptr->turbo_factor = yli::string::extract_float_value_from_string(turbo_factor, index, nullptr, nullptr);
+                    universe_struct.turbo_factor = yli::string::extract_float_value_from_string(turbo_factor, index, nullptr, nullptr);
                 }
 
                 if (this->command_line_master.is_key("twin_turbo_factor") &&
@@ -237,7 +222,7 @@ namespace hirvi
                 {
                     const std::string twin_turbo_factor = this->command_line_master.get_value("twin_turbo_factor");
                     std::size_t index = 0;
-                    universe_struct_shared_ptr->twin_turbo_factor = yli::string::extract_float_value_from_string(twin_turbo_factor, index, nullptr, nullptr);
+                    universe_struct.twin_turbo_factor = yli::string::extract_float_value_from_string(twin_turbo_factor, index, nullptr, nullptr);
                 }
 
                 if (this->command_line_master.is_key("mouse_speed") &&
@@ -245,10 +230,10 @@ namespace hirvi
                 {
                     const std::string mouse_speed = this->command_line_master.get_value("mouse_speed");
                     std::size_t index = 0;
-                    universe_struct_shared_ptr->mouse_speed = yli::string::extract_float_value_from_string(mouse_speed, index, nullptr, nullptr);
+                    universe_struct.mouse_speed = yli::string::extract_float_value_from_string(mouse_speed, index, nullptr, nullptr);
                 }
 
-                return std::pair(true, universe_struct_shared_ptr);
+                return universe_struct;
             }
 
             bool create_simulation() override
@@ -261,9 +246,6 @@ namespace hirvi
                 }
 
                 my_universe->set_global_name("universe");
-
-                my_universe->application_name = "Hirvi";
-                this->set_global_name("hirvi_application");
 
                 yli::ontology::EntityFactory* const entity_factory = my_universe->get_entity_factory();
 
@@ -705,11 +687,11 @@ namespace hirvi
 
                 // Object callbacks.
                 yli::ontology::create_lisp_function_overload("create-object", my_console, std::function(&yli::ontology::Object::create_object_with_parent_name_x_y_z));
-                yli::ontology::create_lisp_function_overload("create-object", my_console, std::function(&yli::ontology::Object::create_object_with_parent_name_x_y_z_horizontal_angle_vertical_angle));
+                yli::ontology::create_lisp_function_overload("create-object", my_console, std::function(&yli::ontology::Object::create_object_with_parent_name_x_y_z_yaw_pitch));
 
                 // Holobiont callbacks.
                 yli::ontology::create_lisp_function_overload("create-holobiont", my_console, std::function(&yli::ontology::Holobiont::create_holobiont_with_parent_name_x_y_z));
-                yli::ontology::create_lisp_function_overload("create-holobiont", my_console, std::function(&yli::ontology::Holobiont::create_holobiont_with_parent_name_x_y_z_horizontal_angle_vertical_angle));
+                yli::ontology::create_lisp_function_overload("create-holobiont", my_console, std::function(&yli::ontology::Holobiont::create_holobiont_with_parent_name_x_y_z_yaw_pitch));
 
                 // `Entity` handling callbacks.
                 yli::ontology::create_lisp_function_overload("entities", my_console, std::function(&yli::ontology::Universe::print_entities));
@@ -766,9 +748,9 @@ namespace hirvi
     };
 }
 
-namespace yli::ontology
+namespace yli::core
 {
-    yli::ontology::Application* create_application(const int argc, const char* const argv[])
+    yli::core::Application* create_application(const int argc, const char* const argv[])
     {
         return new hirvi::HirviApplication(argc, argv);
     }

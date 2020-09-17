@@ -52,7 +52,7 @@ namespace yli::snippets
             yli::ontology::Universe*,
             yli::callback::CallbackEngine*,
             yli::callback::CallbackObject*,
-            std::vector<yli::callback::CallbackParameter*>& input_parameters,
+            std::vector<yli::callback::CallbackParameter*>&,
             std::shared_ptr<yli::data::AnyValue> any_value)
     {
         // Do nothing.
@@ -63,7 +63,7 @@ namespace yli::snippets
             yli::ontology::Universe*,
             yli::callback::CallbackEngine*,
             yli::callback::CallbackObject*,
-            std::vector<yli::callback::CallbackParameter*>& input_parameters,
+            std::vector<yli::callback::CallbackParameter*>&,
             std::shared_ptr<yli::data::AnyValue> any_value)
     {
         if (any_value == nullptr || !std::holds_alternative<yli::ontology::Movable*>(any_value->data))
@@ -79,7 +79,7 @@ namespace yli::snippets
             return nullptr;
         }
 
-        movable->cartesian_coordinates.x += 1.0f;
+        movable->cartesian_coordinates.x += movable->speed;
         return nullptr;
     }
 
@@ -87,7 +87,7 @@ namespace yli::snippets
             yli::ontology::Universe*,
             yli::callback::CallbackEngine*,
             yli::callback::CallbackObject*,
-            std::vector<yli::callback::CallbackParameter*>& input_parameters,
+            std::vector<yli::callback::CallbackParameter*>&,
             std::shared_ptr<yli::data::AnyValue> any_value)
     {
         if (any_value == nullptr || !std::holds_alternative<yli::ontology::Movable*>(any_value->data))
@@ -103,7 +103,7 @@ namespace yli::snippets
             return nullptr;
         }
 
-        movable->cartesian_coordinates.x -= 1.0f;
+        movable->cartesian_coordinates.x -= movable->speed;
         return nullptr;
     }
 
@@ -111,7 +111,7 @@ namespace yli::snippets
             yli::ontology::Universe*,
             yli::callback::CallbackEngine*,
             yli::callback::CallbackObject*,
-            std::vector<yli::callback::CallbackParameter*>& input_parameters,
+            std::vector<yli::callback::CallbackParameter*>&,
             std::shared_ptr<yli::data::AnyValue> any_value)
     {
         if (any_value == nullptr || !std::holds_alternative<yli::ontology::Movable*>(any_value->data))
@@ -127,7 +127,7 @@ namespace yli::snippets
             return nullptr;
         }
 
-        movable->cartesian_coordinates.z -= 1.0f;
+        movable->cartesian_coordinates.z -= movable->speed;
         return nullptr;
     }
 
@@ -135,7 +135,7 @@ namespace yli::snippets
             yli::ontology::Universe*,
             yli::callback::CallbackEngine*,
             yli::callback::CallbackObject*,
-            std::vector<yli::callback::CallbackParameter*>& input_parameters,
+            std::vector<yli::callback::CallbackParameter*>&,
             std::shared_ptr<yli::data::AnyValue> any_value)
     {
         if (any_value == nullptr || !std::holds_alternative<yli::ontology::Movable*>(any_value->data))
@@ -151,7 +151,7 @@ namespace yli::snippets
             return nullptr;
         }
 
-        movable->cartesian_coordinates.z += 1.0f;
+        movable->cartesian_coordinates.z += movable->speed;
         return nullptr;
     }
 
@@ -159,7 +159,7 @@ namespace yli::snippets
             yli::ontology::Universe*,
             yli::callback::CallbackEngine*,
             yli::callback::CallbackObject*,
-            std::vector<yli::callback::CallbackParameter*>& input_parameters,
+            std::vector<yli::callback::CallbackParameter*>&,
             std::shared_ptr<yli::data::AnyValue> any_value)
     {
         if (any_value == nullptr || !std::holds_alternative<yli::ontology::Movable*>(any_value->data))
@@ -175,7 +175,7 @@ namespace yli::snippets
             return nullptr;
         }
 
-        movable->horizontal_angle = 1.5f * PI;
+        movable->yaw = 0.0f;
         return nullptr;
     }
 
@@ -183,7 +183,7 @@ namespace yli::snippets
             yli::ontology::Universe*,
             yli::callback::CallbackEngine*,
             yli::callback::CallbackObject*,
-            std::vector<yli::callback::CallbackParameter*>& input_parameters,
+            std::vector<yli::callback::CallbackParameter*>&,
             std::shared_ptr<yli::data::AnyValue> any_value)
     {
         if (any_value == nullptr || !std::holds_alternative<yli::ontology::Movable*>(any_value->data))
@@ -199,7 +199,7 @@ namespace yli::snippets
             return nullptr;
         }
 
-        movable->horizontal_angle = 0.5f * PI;
+        movable->yaw = PI;
         return nullptr;
     }
 
@@ -207,7 +207,7 @@ namespace yli::snippets
             yli::ontology::Universe*,
             yli::callback::CallbackEngine*,
             yli::callback::CallbackObject*,
-            std::vector<yli::callback::CallbackParameter*>& input_parameters,
+            std::vector<yli::callback::CallbackParameter*>&,
             std::shared_ptr<yli::data::AnyValue> any_value)
     {
         if (any_value == nullptr || !std::holds_alternative<yli::ontology::Movable*>(any_value->data))
@@ -223,7 +223,7 @@ namespace yli::snippets
             return nullptr;
         }
 
-        movable->horizontal_angle = 0.0f;
+        movable->yaw = 0.5f * PI;
         return nullptr;
     }
 
@@ -231,7 +231,7 @@ namespace yli::snippets
             yli::ontology::Universe*,
             yli::callback::CallbackEngine*,
             yli::callback::CallbackObject*,
-            std::vector<yli::callback::CallbackParameter*>& input_parameters,
+            std::vector<yli::callback::CallbackParameter*>&,
             std::shared_ptr<yli::data::AnyValue> any_value)
     {
         if (any_value == nullptr || !std::holds_alternative<yli::ontology::Movable*>(any_value->data))
@@ -247,7 +247,7 @@ namespace yli::snippets
             return nullptr;
         }
 
-        movable->horizontal_angle = 1.0f * PI;
+        movable->yaw = -0.5f * PI;
         return nullptr;
     }
 
@@ -255,7 +255,7 @@ namespace yli::snippets
             yli::ontology::Universe*,
             yli::callback::CallbackEngine*,
             yli::callback::CallbackObject*,
-            std::vector<yli::callback::CallbackParameter*>& input_parameters,
+            std::vector<yli::callback::CallbackParameter*>&,
             std::shared_ptr<yli::data::AnyValue> any_value)
     {
         if (any_value == nullptr || !std::holds_alternative<yli::ontology::Movable*>(any_value->data))
@@ -271,8 +271,8 @@ namespace yli::snippets
             return nullptr;
         }
 
-        movable->horizontal_angle = 1.5f * PI;
-        movable->cartesian_coordinates.x += 1.0f;
+        movable->yaw = 0.0f;
+        movable->cartesian_coordinates.x += movable->speed;
         return nullptr;
     }
 
@@ -280,7 +280,7 @@ namespace yli::snippets
             yli::ontology::Universe*,
             yli::callback::CallbackEngine*,
             yli::callback::CallbackObject*,
-            std::vector<yli::callback::CallbackParameter*>& input_parameters,
+            std::vector<yli::callback::CallbackParameter*>&,
             std::shared_ptr<yli::data::AnyValue> any_value)
     {
         if (any_value == nullptr || !std::holds_alternative<yli::ontology::Movable*>(any_value->data))
@@ -296,8 +296,8 @@ namespace yli::snippets
             return nullptr;
         }
 
-        movable->horizontal_angle = 0.5f * PI;
-        movable->cartesian_coordinates.x -= 1.0f;
+        movable->yaw = PI;
+        movable->cartesian_coordinates.x -= movable->speed;
         return nullptr;
     }
 
@@ -305,7 +305,7 @@ namespace yli::snippets
             yli::ontology::Universe*,
             yli::callback::CallbackEngine*,
             yli::callback::CallbackObject*,
-            std::vector<yli::callback::CallbackParameter*>& input_parameters,
+            std::vector<yli::callback::CallbackParameter*>&,
             std::shared_ptr<yli::data::AnyValue> any_value)
     {
         if (any_value == nullptr || !std::holds_alternative<yli::ontology::Movable*>(any_value->data))
@@ -321,8 +321,8 @@ namespace yli::snippets
             return nullptr;
         }
 
-        movable->horizontal_angle = 0.0f;
-        movable->cartesian_coordinates.z -= 1.0f;
+        movable->yaw = 0.5f * PI;
+        movable->cartesian_coordinates.z -= movable->speed;
         return nullptr;
     }
 
@@ -330,7 +330,7 @@ namespace yli::snippets
             yli::ontology::Universe*,
             yli::callback::CallbackEngine*,
             yli::callback::CallbackObject*,
-            std::vector<yli::callback::CallbackParameter*>& input_parameters,
+            std::vector<yli::callback::CallbackParameter*>&,
             std::shared_ptr<yli::data::AnyValue> any_value)
     {
         if (any_value == nullptr || !std::holds_alternative<yli::ontology::Movable*>(any_value->data))
@@ -346,8 +346,8 @@ namespace yli::snippets
             return nullptr;
         }
 
-        movable->horizontal_angle = 1.0f * PI;
-        movable->cartesian_coordinates.z += 1.0f;
+        movable->yaw = -0.5f * PI;
+        movable->cartesian_coordinates.z += movable->speed;
         return nullptr;
     }
 
@@ -355,7 +355,7 @@ namespace yli::snippets
             yli::ontology::Universe*,
             yli::callback::CallbackEngine*,
             yli::callback::CallbackObject*,
-            std::vector<yli::callback::CallbackParameter*>& input_parameters,
+            std::vector<yli::callback::CallbackParameter*>&,
             std::shared_ptr<yli::data::AnyValue> any_value)
     {
         if (any_value == nullptr || !std::holds_alternative<yli::ontology::Movable*>(any_value->data))
@@ -371,7 +371,7 @@ namespace yli::snippets
             return nullptr;
         }
 
-        movable->horizontal_angle -= 0.1f * PI;
+        movable->yaw -= 0.1f * PI;
         return nullptr;
     }
 
@@ -379,7 +379,7 @@ namespace yli::snippets
             yli::ontology::Universe*,
             yli::callback::CallbackEngine*,
             yli::callback::CallbackObject*,
-            std::vector<yli::callback::CallbackParameter*>& input_parameters,
+            std::vector<yli::callback::CallbackParameter*>&,
             std::shared_ptr<yli::data::AnyValue> any_value)
     {
         if (any_value == nullptr || !std::holds_alternative<yli::ontology::Movable*>(any_value->data))
@@ -395,7 +395,7 @@ namespace yli::snippets
             return nullptr;
         }
 
-        movable->horizontal_angle += 0.1f * PI;
+        movable->yaw += 0.1f * PI;
         return nullptr;
     }
 }

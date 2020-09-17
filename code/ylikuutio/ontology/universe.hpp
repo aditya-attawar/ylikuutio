@@ -291,7 +291,6 @@ namespace yli::input
 
 namespace yli::ontology
 {
-    class Application;
     class Scene;
     class Camera;
     class Font2D;
@@ -302,9 +301,6 @@ namespace yli::ontology
         public:
             void bind_entity(yli::ontology::Entity* const entity);
             void unbind_entity(const std::size_t entityID);
-
-            void bind_application(yli::ontology::Application* const application);
-            void unbind_application(const std::size_t childID, const std::string& local_name);
 
             Universe(const yli::ontology::UniverseStruct& universe_struct)
                 : Entity(this, universe_struct), // `Universe` has no parent.
@@ -330,8 +326,6 @@ namespace yli::ontology
                 this->current_camera_spherical_coordinates.theta = NAN; // dummy coordinates.
                 this->current_camera_spherical_coordinates.phi   = NAN; // dummy coordinates.
 
-                this->number_of_applications = 0;
-
                 this->active_scene       = nullptr;
                 this->active_font2D      = nullptr;
                 this->active_console     = nullptr;
@@ -348,6 +342,7 @@ namespace yli::ontology
                 this->window_height      = universe_struct.window_height;
                 this->framebuffer_width  = universe_struct.framebuffer_width;
                 this->framebuffer_height = universe_struct.framebuffer_height;
+                this->application_name   = universe_struct.application_name;
                 this->window_title       = universe_struct.window_title;
 
                 if (this->window_title.empty())
@@ -374,8 +369,8 @@ namespace yli::ontology
 
                 this->current_camera_projection_matrix = glm::mat4(1.0f); // identity matrix (dummy value).
                 this->current_camera_view_matrix       = glm::mat4(1.0f); // identity matrix (dummy value).
-                this->current_camera_horizontal_angle  = NAN;
-                this->current_camera_vertical_angle    = NAN;
+                this->current_camera_yaw               = NAN;
+                this->current_camera_pitch             = NAN;
 
                 // Variables related to the camera.
                 this->aspect_ratio = static_cast<float>(this->window_width) / static_cast<float>(this->window_height);
@@ -707,8 +702,8 @@ namespace yli::ontology
             glm::vec3 current_camera_right; // note: `right` can not be set directly using console.
             glm::vec3 current_camera_up;    // note: `up` can not be set directly using console.
 
-            float current_camera_horizontal_angle;
-            float current_camera_vertical_angle;
+            float current_camera_yaw;
+            float current_camera_pitch;
 
             int32_t mouse_x;
             int32_t mouse_y;
@@ -768,10 +763,6 @@ namespace yli::ontology
             std::vector<yli::ontology::Entity*> entity_pointer_vector;
             std::queue<std::size_t> free_entityID_queue;
             std::size_t number_of_entities;
-
-            std::vector<yli::ontology::Application*> application_pointer_vector;
-            std::queue<std::size_t> free_applicationID_queue;
-            std::size_t number_of_applications;
 
             yli::ontology::Scene* active_scene;
             yli::ontology::Font2D* active_font2D;

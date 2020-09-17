@@ -29,7 +29,8 @@
 #endif
 
 // Include standard headers
-#include <cmath> // NAN, std::isnan, std::pow
+#include <cmath>  // NAN, std::isnan, std::pow
+#include <vector> // std::vector
 
 namespace yli::ontology
 {
@@ -38,13 +39,7 @@ namespace yli::ontology
     struct MovableStruct: public yli::ontology::EntityStruct
     {
         MovableStruct()
-            : EntityStruct(),
-            input_method(yli::input::InputMethod::AI),
-            brain(nullptr),
-            cartesian_coordinates(glm::vec3(NAN, NAN, NAN)),
-            spherical_coordinates(NAN, NAN, NAN),
-            horizontal_angle(0.0),
-            vertical_angle(0.0)
+            : EntityStruct()
         {
             // constructor.
         }
@@ -53,42 +48,48 @@ namespace yli::ontology
                 yli::ontology::Brain* const brain,
                 const glm::vec3& cartesian_coordinates,
                 yli::data::SphericalCoordinatesStruct spherical_coordinates,
-                const float horizontal_angle,
-                const float vertical_angle)
+                const float yaw,
+                const float pitch)
             : EntityStruct(),
-            input_method(yli::input::InputMethod::AI),
             brain(brain),
             cartesian_coordinates(cartesian_coordinates),
             spherical_coordinates(spherical_coordinates),
-            horizontal_angle(horizontal_angle),
-            vertical_angle(vertical_angle)
+            yaw(yaw),
+            pitch(pitch)
         {
+            // constructor.
         }
 
         MovableStruct(
                 yli::ontology::Brain* const brain,
                 const glm::vec3& cartesian_coordinates,
                 yli::data::SphericalCoordinatesStruct spherical_coordinates,
-                const float horizontal_angle,
-                const float vertical_angle,
+                const float yaw,
+                const float pitch,
                 const std::string& global_name,
                 const std::string& local_name)
             : EntityStruct(global_name, local_name),
-            input_method(yli::input::InputMethod::AI),
             brain(brain),
             cartesian_coordinates(cartesian_coordinates),
             spherical_coordinates(spherical_coordinates),
-            horizontal_angle(horizontal_angle),
-            vertical_angle(vertical_angle)
+            yaw(yaw),
+            pitch(pitch)
         {
+            // constructor.
         }
 
-        yli::input::InputMethod input_method;
-        yli::ontology::Brain* brain;     // brain.
-        glm::vec3 cartesian_coordinates; // coordinate vector.
-        yli::data::SphericalCoordinatesStruct spherical_coordinates;
-        float horizontal_angle;
-        float vertical_angle;
+        yli::input::InputMethod input_method { yli::input::InputMethod::AI };
+        yli::ontology::Brain* brain { nullptr };
+
+        std::vector<glm::vec3> initial_rotate_vectors;
+        std::vector<float> initial_rotate_angles;
+
+        glm::vec3 original_scale_vector { glm::vec3(1.0f, 1.0f, 1.0f) };
+
+        glm::vec3 cartesian_coordinates { glm::vec3(NAN, NAN, NAN) };
+        yli::data::SphericalCoordinatesStruct spherical_coordinates { NAN, NAN, NAN };
+        float yaw { 0.0f };
+        float pitch { 0.0f };
     };
 }
 

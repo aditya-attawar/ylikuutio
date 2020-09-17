@@ -245,8 +245,10 @@ Some available console commands to try in Ajokki:
 * `set cat1.z 210`
 * `bind helsinki_east_downtown_orange_fur_material helsinki_east_downtown_grayscale_shader`
 * `bind helsinki_east_downtown_orange_fur_material helsinki_east_downtown_shader`
+* `print cat1.speed`
 * `bind cat1 orient_to_south_brain`
 * `bind cat1 orient_and_go_east_brain`
+* `set cat1.speed 1`
 * `bind cat1 orient_and_go_west_brain`
 * `bind cat1 rest_brain`
 * `print framebuffer_width`
@@ -302,8 +304,9 @@ Q: Are there plans to support other graphics APIs?
 A: Newer OpenGL versions may be supported in the future, but so far
    OpenGL 3.0 fulfils my requirements. Vulkan needs to be considered.
 
-Q: Does Ylikuutio use modern OpenGL (VBOs)?
-A: Yes, Ylikuutio uses VBOs (vertex buffer objects) and VBO indexing.
+Q: Does Ylikuutio use modern OpenGL (VAOs and VBOs)?
+A: Yes, Ylikuutio uses VAOs (vertex array objects, VBOs (vertex buffer objects),
+   and index buffers.
 
 Q: Is Ylikuutio based on some other 3D engine?
 A: Some parts of Ylikuutio (some shaders, some file loaders, etc.) are

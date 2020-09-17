@@ -15,6 +15,10 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#ifndef PI
+#define PI 3.14159265359f
+#endif
+
 #include "movable_variable_read.hpp"
 #include "movable.hpp"
 #include "universe.hpp"
@@ -239,7 +243,7 @@ namespace yli::ontology
         return std::make_shared<yli::data::AnyValue>(&universe->current_camera_right);
     }
 
-    std::shared_ptr<yli::data::AnyValue> read_horizontal_angle(yli::ontology::Entity* const entity)
+    std::shared_ptr<yli::data::AnyValue> read_yaw(yli::ontology::Entity* const entity)
     {
         if (entity == nullptr)
         {
@@ -250,7 +254,7 @@ namespace yli::ontology
 
         if (movable != nullptr)
         {
-            return std::make_shared<yli::data::AnyValue>(movable->horizontal_angle);
+            return std::make_shared<yli::data::AnyValue>(movable->yaw);
         }
 
         yli::ontology::Universe* const universe = dynamic_cast<yli::ontology::Universe*>(entity);
@@ -260,10 +264,10 @@ namespace yli::ontology
             return nullptr;
         }
 
-        return std::make_shared<yli::data::AnyValue>(universe->current_camera_horizontal_angle);
+        return std::make_shared<yli::data::AnyValue>(universe->current_camera_yaw);
     }
 
-    std::shared_ptr<yli::data::AnyValue> read_vertical_angle(yli::ontology::Entity* const entity)
+    std::shared_ptr<yli::data::AnyValue> read_pitch(yli::ontology::Entity* const entity)
     {
         if (entity == nullptr)
         {
@@ -274,7 +278,7 @@ namespace yli::ontology
 
         if (movable != nullptr)
         {
-            return std::make_shared<yli::data::AnyValue>(movable->vertical_angle);
+            return std::make_shared<yli::data::AnyValue>(movable->pitch);
         }
 
         yli::ontology::Universe* const universe = dynamic_cast<yli::ontology::Universe*>(entity);
@@ -284,6 +288,32 @@ namespace yli::ontology
             return nullptr;
         }
 
-        return std::make_shared<yli::data::AnyValue>(universe->current_camera_vertical_angle);
+        return std::make_shared<yli::data::AnyValue>(universe->current_camera_pitch);
+    }
+
+    std::shared_ptr<yli::data::AnyValue> read_azimuth(yli::ontology::Entity* const entity)
+    {
+        if (entity == nullptr)
+        {
+            return nullptr;
+        }
+
+        yli::ontology::Movable* const movable = dynamic_cast<yli::ontology::Movable*>(entity);
+
+        if (movable != nullptr)
+        {
+            const float azimuth = 0.5f * PI - movable->yaw;
+            return std::make_shared<yli::data::AnyValue>(azimuth);
+        }
+
+        yli::ontology::Universe* const universe = dynamic_cast<yli::ontology::Universe*>(entity);
+
+        if (universe == nullptr)
+        {
+            return nullptr;
+        }
+
+        const float azimuth = 0.5f * PI - universe->current_camera_yaw;
+        return std::make_shared<yli::data::AnyValue>(azimuth);
     }
 }

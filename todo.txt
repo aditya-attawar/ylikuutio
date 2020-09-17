@@ -6,7 +6,6 @@ Fixes needed:
 [ ] Fix compiling on Visual Studio.
 
 Tasks which are necessary for the first stage (Hirvi prototype):
-[ ] Create initial design of custom `.yli` binary format.
 [ ] Implement new `yli_convert` program that converts ASCII files of elevation model of National Land Survey of Finland into custom `.yli` binary format.
 [ ] Implement `yli::ontology::HeightmapStruct` that inherits `yli::ontology::EntityStruct`, to support heightmaps consisting of several sheets.
 [ ] Implement `yli::ontology::Heightmap` class that inherits `yli::ontology::Entity`, to support heightmaps consisting of several sheets.
@@ -17,6 +16,7 @@ Tasks which are necessary for the first stage (Hirvi prototype):
 [ ] Add support for OpenStreetMap data: https://www.openstreetmap.org/
 
 Tasks which are necessary for the second stage:
+[ ] Add support for different keyboard layouts in `Console`.
 [ ] Convert local variables of `Application::create_simulation` implementations into heap-allocated ones so that `Universe::start_simulation` can be called from `main`.
 [ ] Call `Universe::start_simulation` from `main` instead of `Application::create_simulation` implementations.
 [ ] Evaluate Dear ImGUI: https://github.com/ocornut/imgui
@@ -62,6 +62,9 @@ Tasks which are necessary for the second stage:
 [ ] Implement dynamic not flowing water, using OpenGL shaders.
 [ ] Create `audio::Sound` class, whose parent is `Entity`.
 [ ] Create `audio::PlayList` class, whose parent is `Entity`.
+[ ] Evaluate FreeType.
+[ ] Evaluate HarfBuzz.
+[ ] Implement better font support.
 
 Tasks which are necessary for the third stage:
 [ ] Upgrade CMake to at least 3.16 to enable support of precompiled headers directly in CMake.
@@ -175,6 +178,9 @@ Less urgent:
 [ ] Store each robot's current view into an array from which the robot may access it programmatically using C++ and/or GLSL.
 [ ] Implement simulation of contour detection processing in the primary visual cortex (V1).
 [ ] Implement simulation of contour detection processing in V2 (visual cortex area).
+[ ] Learn Vulkan.
+[ ] Abstract Ylikuutio rendering API to enable support for both OpenGL and Vulkan.
+[ ] Add Vulkan support.
 
 Ready:
 [x] Add test VBO, e.g. some kind of particle object.
@@ -257,3 +263,5 @@ Ready:
 [x] Implement `int main(const int argc, const char* const argv[])` function with `try` & `catch` in new function file `code/ylikuutio/core/entrypoint.hpp`.
 [x] Implement `yli::ontology::Application` class that inherits `yli::ontology::Entity` and binds to the `yli::ontology::Universe`.
 [x] Implement processing command line arguments in the `yli::ontology::Application` class based on the data received from the application itself (as before).
+[x] Create initial design of custom `.yli` binary format.
+[x] Implement `Variable` `azimuth` (for geographical angles/azimuths), 0 pointing north, pi/2 pointing east, pi pointing south, -pi/2 pointing west.

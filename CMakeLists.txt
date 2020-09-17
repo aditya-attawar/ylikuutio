@@ -48,14 +48,10 @@ endif()
 # Compile external dependencies
 add_subdirectory (external)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -Wall -Werror=return-type")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -Wall")
 if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    # Clang and GCC accept `-Wextra`, but Visual Studio does not seem to accept it.
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wextra")
-endif()
-if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-    # Clang is by default more strict than standard with template template arguments.
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -frelaxed-template-template-args")
+    # Command line arguments not accepted by Visual Studio.
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wextra -Werror=return-type")
 endif()
 
 # set(CMAKE_COLOR_MAKEFILE ON)
@@ -340,6 +336,7 @@ configure_file(code/ylikuutio/shaders/text_vertex_shader.frag text_vertex_shader
 # 3D models.
 # Suzanne.
 configure_file(res/objects/custom/suzanne.obj suzanne.obj COPYONLY)
+configure_file(res/objects/custom/suzanne_old.obj suzanne_old.obj COPYONLY)
 # Freight train.
 configure_file(res/objects/www.blendswap.com/46359_freight_train/freight_train.fbx freight_train.fbx COPYONLY)
 configure_file(res/objects/www.blendswap.com/46359_freight_train/textures/freight_train_chassis.bmp freight_train_chassis.bmp COPYONLY)
@@ -450,6 +447,8 @@ add_library(ylikuutio STATIC
     code/ylikuutio/console/input_parameters_to_any_value_callback_with_console.hpp
 
     # core, in alphabetical order
+    code/ylikuutio/core/application.cpp
+    code/ylikuutio/core/application.hpp
     code/ylikuutio/core/entrypoint.hpp
 
     # data, in alphabetical order
@@ -580,8 +579,6 @@ add_library(ylikuutio STATIC
 
     # ontology, in alphabetical order
     code/ylikuutio/ontology/activate_callback.hpp
-    code/ylikuutio/ontology/application.cpp
-    code/ylikuutio/ontology/application.hpp
     code/ylikuutio/ontology/biont.cpp
     code/ylikuutio/ontology/biont.hpp
     code/ylikuutio/ontology/biont_struct.hpp

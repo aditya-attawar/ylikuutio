@@ -34,13 +34,13 @@
 #endif
 
 #include "entity.hpp"
-#include "application.hpp"
 #include "variable.hpp"
 #include "universe.hpp"
 #include "scene.hpp"
 #include "text2D.hpp"
 #include "camera.hpp"
 #include "console.hpp"
+#include "entity_factory.hpp"
 #include "entity_variable_activation.hpp"
 #include "entity_variable_read.hpp"
 #include "variable_struct.hpp"
@@ -131,35 +131,10 @@ namespace yli::ontology
                 this->number_of_entities);
     }
 
-    void Universe::bind_application(yli::ontology::Application* const application)
-    {
-        // get `childID` from `Universe` and set pointer to `application`.
-        yli::hierarchy::bind_child_to_parent<yli::ontology::Application*>(
-                application,
-                this->application_pointer_vector,
-                this->free_applicationID_queue,
-                this->number_of_applications);
-    }
-
-    void Universe::unbind_application(const std::size_t childID, const std::string& local_name)
-    {
-        yli::ontology::unbind_child_from_parent(
-                childID,
-                local_name,
-                this->application_pointer_vector,
-                this->free_applicationID_queue,
-                this->number_of_applications,
-                this->entity_map);
-    }
-
     Universe::~Universe()
     {
         // destructor.
         std::cout << "This `Universe` will be destroyed.\n";
-
-        // destroy all `Application`s of this `Scene`.
-        std::cout << "All `Application`s of this `Scene` will be destroyed.\n";
-        yli::hierarchy::delete_children<yli::ontology::Application*>(this->application_pointer_vector, this->number_of_applications);
 
         if (!this->is_headless && this->is_framebuffer_initialized)
         {
@@ -443,35 +418,35 @@ namespace yli::ontology
                         this->has_mouse_ever_moved = true;
 
                         // Compute new orientation.
-                        this->current_camera_horizontal_angle += this->mouse_speed * static_cast<float>(this->window_width / 2 - xpos);
-                        this->current_camera_horizontal_angle = remainder(this->current_camera_horizontal_angle, (2.0f * PI));
+                        this->current_camera_yaw += this->mouse_speed * static_cast<float>(this->window_width / 2 - xpos);
+                        this->current_camera_yaw = remainder(this->current_camera_yaw, (2.0f * PI));
 
                         if (this->is_invert_mouse_in_use)
                         {
                             // Invert mouse.
-                            this->current_camera_vertical_angle -= this->mouse_speed * static_cast<float>(this->window_height / 2 - ypos);
+                            this->current_camera_pitch -= this->mouse_speed * static_cast<float>(this->window_height / 2 - ypos);
                         }
                         else
                         {
                             // Don't invert mouse.
-                            this->current_camera_vertical_angle += this->mouse_speed * static_cast<float>(this->window_height / 2 - ypos);
+                            this->current_camera_pitch += this->mouse_speed * static_cast<float>(this->window_height / 2 - ypos);
                         }
 
-                        this->current_camera_vertical_angle = remainder(this->current_camera_vertical_angle, (2.0f * PI));
+                        this->current_camera_pitch = remainder(this->current_camera_pitch, (2.0f * PI));
                     }
                 }
 
                 // Direction: spherical coordinates to cartesian coordinates conversion.
                 this->current_camera_direction = glm::vec3(
-                        cos(this->current_camera_vertical_angle) * sin(this->current_camera_horizontal_angle),
-                        sin(this->current_camera_vertical_angle),
-                        cos(this->current_camera_vertical_angle) * cos(this->current_camera_horizontal_angle));
+                        cos(this->current_camera_pitch) * sin(this->current_camera_yaw + 0.5f * PI),
+                        sin(this->current_camera_pitch),
+                        cos(this->current_camera_pitch) * cos(this->current_camera_yaw + 0.5f * PI));
 
                 // Right vector.
                 this->current_camera_right = glm::vec3(
-                        sin(this->current_camera_horizontal_angle - PI/2.0f),
+                        sin(this->current_camera_yaw),
                         0,
-                        cos(this->current_camera_horizontal_angle - PI/2.0f));
+                        cos(this->current_camera_yaw));
 
                 // Up vector.
                 this->current_camera_up = glm::cross(this->current_camera_right, this->current_camera_direction);
@@ -541,10 +516,10 @@ namespace yli::ontology
                 {
                     std::stringstream angles_and_coordinates_stringstream;
                     angles_and_coordinates_stringstream << std::fixed << std::setprecision(2) <<
-                        this->current_camera_horizontal_angle << "," <<
-                        this->current_camera_vertical_angle << " rad; " <<
-                        RADIANS_TO_DEGREES(this->current_camera_horizontal_angle) << "," <<
-                        RADIANS_TO_DEGREES(this->current_camera_vertical_angle) << " deg\n" <<
+                        this->current_camera_yaw << "," <<
+                        this->current_camera_pitch << " rad; " <<
+                        RADIANS_TO_DEGREES(this->current_camera_yaw) << "," <<
+                        RADIANS_TO_DEGREES(this->current_camera_pitch) << " deg\n" <<
                         "(" <<
                         this->current_camera_cartesian_coordinates.x << "," <<
                         this->current_camera_cartesian_coordinates.y << "," <<
@@ -770,8 +745,7 @@ namespace yli::ontology
 
     std::size_t Universe::get_number_of_children() const
     {
-        return this->number_of_applications +
-            this->parent_of_worlds.get_number_of_children() +
+        return this->parent_of_worlds.get_number_of_children() +
             this->parent_of_font2Ds.get_number_of_children() +
             this->parent_of_consoles.get_number_of_children() +
             this->parent_of_any_value_entities.get_number_of_children() +
@@ -780,8 +754,7 @@ namespace yli::ontology
 
     std::size_t Universe::get_number_of_descendants() const
     {
-        return yli::ontology::get_number_of_descendants(this->application_pointer_vector) +
-            yli::ontology::get_number_of_descendants(this->parent_of_worlds.child_pointer_vector) +
+        return yli::ontology::get_number_of_descendants(this->parent_of_worlds.child_pointer_vector) +
             yli::ontology::get_number_of_descendants(this->parent_of_font2Ds.child_pointer_vector) +
             yli::ontology::get_number_of_descendants(this->parent_of_consoles.child_pointer_vector) +
             yli::ontology::get_number_of_descendants(this->parent_of_any_value_entities.child_pointer_vector) +

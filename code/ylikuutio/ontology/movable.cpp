@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#include "variable.hpp"
 #include "movable.hpp"
 #include "brain.hpp"
 #include "movable_variable_activation.hpp"
@@ -91,24 +92,24 @@ namespace yli::ontology
         this->cartesian_coordinates = cartesian_coordinates;
     }
 
-    float Movable::get_horizontal_angle() const
+    float Movable::get_yaw() const
     {
-        return this->horizontal_angle;
+        return this->yaw;
     }
 
-    void Movable::set_horizontal_angle(const float horizontal_angle)
+    void Movable::set_yaw(const float yaw)
     {
-        this->horizontal_angle = horizontal_angle;
+        this->yaw = yaw;
     }
 
-    float Movable::get_vertical_angle() const
+    float Movable::get_pitch() const
     {
-        return this->vertical_angle;
+        return this->pitch;
     }
 
-    void Movable::set_vertical_angle(const float vertical_angle)
+    void Movable::set_pitch(const float pitch)
     {
-        this->vertical_angle = vertical_angle;
+        this->pitch = pitch;
     }
 
     // Public callbacks (to be called from AI scripts written in YliLisp).
@@ -195,20 +196,37 @@ namespace yli::ontology
         std::cout << "Executing `this->create_variable(z_variable_struct);` ...\n";
         this->create_variable(z_variable_struct);
 
-        yli::ontology::VariableStruct horizontal_angle_variable_struct(std::make_shared<yli::data::AnyValue>(this->horizontal_angle));
-        horizontal_angle_variable_struct.local_name = "horizontal_angle";
-        horizontal_angle_variable_struct.activate_callback = &yli::ontology::activate_horizontal_angle;
-        horizontal_angle_variable_struct.read_callback = &yli::ontology::read_horizontal_angle;
-        horizontal_angle_variable_struct.should_ylikuutio_call_activate_callback_now = true;
-        std::cout << "Executing `this->create_variable(horizontal_angle_variable_struct);` ...\n";
-        this->create_variable(horizontal_angle_variable_struct);
+        yli::ontology::VariableStruct yaw_variable_struct(std::make_shared<yli::data::AnyValue>(this->yaw));
+        yaw_variable_struct.local_name = "yaw";
+        yaw_variable_struct.activate_callback = &yli::ontology::activate_yaw;
+        yaw_variable_struct.read_callback = &yli::ontology::read_yaw;
+        yaw_variable_struct.should_ylikuutio_call_activate_callback_now = true;
+        std::cout << "Executing `this->create_variable(yaw_variable_struct);` ...\n";
+        this->create_variable(yaw_variable_struct);
 
-        yli::ontology::VariableStruct vertical_angle_variable_struct(std::make_shared<yli::data::AnyValue>(this->vertical_angle));
-        vertical_angle_variable_struct.local_name = "vertical_angle";
-        vertical_angle_variable_struct.activate_callback = &yli::ontology::activate_vertical_angle;
-        vertical_angle_variable_struct.read_callback = &yli::ontology::read_vertical_angle;
-        vertical_angle_variable_struct.should_ylikuutio_call_activate_callback_now = true;
-        std::cout << "Executing `this->create_variable(vertical_angle_variable_struct);` ...\n";
-        this->create_variable(vertical_angle_variable_struct);
+        yli::ontology::VariableStruct pitch_variable_struct(std::make_shared<yli::data::AnyValue>(this->pitch));
+        pitch_variable_struct.local_name = "pitch";
+        pitch_variable_struct.activate_callback = &yli::ontology::activate_pitch;
+        pitch_variable_struct.read_callback = &yli::ontology::read_pitch;
+        pitch_variable_struct.should_ylikuutio_call_activate_callback_now = true;
+        std::cout << "Executing `this->create_variable(pitch_variable_struct);` ...\n";
+        this->create_variable(pitch_variable_struct);
+
+        const float azimuth = 0.0f;
+        yli::ontology::VariableStruct azimuth_variable_struct(std::make_shared<yli::data::AnyValue>(azimuth));
+        azimuth_variable_struct.local_name = "azimuth";
+        azimuth_variable_struct.activate_callback = &yli::ontology::activate_azimuth;
+        azimuth_variable_struct.read_callback = &yli::ontology::read_azimuth;
+        azimuth_variable_struct.should_ylikuutio_call_activate_callback_now = false;
+        std::cout << "Executing `entity->create_variable(azimuth_variable_struct);` ...\n";
+        this->create_variable(azimuth_variable_struct);
+
+        const float speed = 0.0f;
+        std::shared_ptr<yli::data::AnyValue> any_value_speed = std::make_shared<yli::data::AnyValue>(speed);
+        yli::ontology::VariableStruct speed_variable_struct(any_value_speed);
+        speed_variable_struct.local_name = "speed";
+        speed_variable_struct.activate_callback = &yli::ontology::Variable::activate_speed;
+        speed_variable_struct.should_ylikuutio_call_activate_callback_now = true;
+        this->create_variable(speed_variable_struct);
     }
 }

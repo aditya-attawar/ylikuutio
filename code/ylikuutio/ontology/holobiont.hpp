@@ -21,35 +21,22 @@
 #include "movable.hpp"
 #include "parent_module.hpp"
 #include "holobiont_struct.hpp"
-#include "movable_struct.hpp"
-#include "code/ylikuutio/data/spherical_coordinates_struct.hpp"
-
-// Include GLM
-#ifndef __GLM_GLM_HPP_INCLUDED
-#define __GLM_GLM_HPP_INCLUDED
-#include <glm/glm.hpp> // glm
-#endif
-
-#ifndef __GLM_GTC_MATRIX_TRANSFORM_HPP_INCLUDED
-#define __GLM_GTC_MATRIX_TRANSFORM_HPP_INCLUDED
-#include <glm/gtc/matrix_transform.hpp>
-#endif
-
-#ifndef __GLM_GTC_QUATERNION_HPP_INCLUDED
-#define __GLM_GTC_QUATERNION_HPP_INCLUDED
-#include <glm/gtc/quaternion.hpp> // glm::quat
-#endif
 
 // Include standard headers
 #include <cstddef>  // std::size_t
-#include <queue>    // std::queue
+#include <memory>   // std::make_shared, std::shared_ptr
 #include <string>   // std::string
-#include <vector>   // std::vector
+
+namespace yli::data
+{
+    class AnyValue;
+}
 
 namespace yli::ontology
 {
     class Entity;
     class Universe;
+    class Symbiosis;
 
     class Holobiont: public yli::ontology::Movable
     {
@@ -60,27 +47,11 @@ namespace yli::ontology
                     yli::ontology::ParentModule* const parent_module)
                 : Movable(
                         universe,
-                        yli::ontology::MovableStruct(
-                            holobiont_struct.brain,
-                            holobiont_struct.cartesian_coordinates,
-                            holobiont_struct.spherical_coordinates,
-                            holobiont_struct.horizontal_angle,
-                            holobiont_struct.vertical_angle),
+                        holobiont_struct,
                         parent_module),
                 parent_of_bionts(this)
             {
                 // constructor.
-
-                this->original_scale_vector = holobiont_struct.original_scale_vector;
-                this->rotate_vector         = holobiont_struct.rotate_vector;
-                this->translate_vector      = holobiont_struct.translate_vector;
-                this->initial_rotate_vector = holobiont_struct.initial_rotate_vector;
-
-                this->rotate_angle          = holobiont_struct.rotate_angle;
-                this->initial_rotate_angle  = holobiont_struct.initial_rotate_angle;
-
-                this->cartesian_coordinates = holobiont_struct.cartesian_coordinates;
-                this->spherical_coordinates = holobiont_struct.spherical_coordinates;
 
                 this->create_bionts();
 
@@ -108,14 +79,14 @@ namespace yli::ontology
                     std::shared_ptr<std::string> y,
                     std::shared_ptr<std::string> z);
 
-            static std::shared_ptr<yli::data::AnyValue> create_holobiont_with_parent_name_x_y_z_horizontal_angle_vertical_angle(
+            static std::shared_ptr<yli::data::AnyValue> create_holobiont_with_parent_name_x_y_z_yaw_pitch(
                     yli::ontology::Symbiosis* const parent,
                     std::shared_ptr<std::string> holobiont_name,
                     std::shared_ptr<std::string> x,
                     std::shared_ptr<std::string> y,
                     std::shared_ptr<std::string> z,
-                    std::shared_ptr<std::string> horizontal_angle,
-                    std::shared_ptr<std::string> vertical_angle);
+                    std::shared_ptr<std::string> yaw,
+                    std::shared_ptr<std::string> pitch);
 
             // Public callbacks end here.
 
@@ -129,16 +100,6 @@ namespace yli::ontology
             void render() override;
 
             void create_bionts();
-
-            glm::vec3 original_scale_vector;            // original scale vector.
-            glm::vec3 rotate_vector;                    // rotate vector.
-            glm::vec3 translate_vector;                 // translate vector.
-            glm::vec3 initial_rotate_vector;            // initial rotate vector.
-
-            yli::data::SphericalCoordinatesStruct spherical_coordinates;
-
-            float rotate_angle;                         // rotate angle.
-            float initial_rotate_angle;                 // initial rotate angle.
     };
 }
 
